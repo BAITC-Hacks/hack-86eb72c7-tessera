@@ -10,7 +10,8 @@
     "test:auth": "node --test tests/auth/*.test.mjs",
     "test:workspace": "node --test tests/components/*.test.mjs",
     "test:ai": "node --test tests/ai/*.test.mjs",
-    "test:realtime": "node --test tests/realtime/*.test.mjs"
+    "test:realtime": "node --test tests/realtime/*.test.mjs",
+    "test:client": "node --test tests/client/*.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
