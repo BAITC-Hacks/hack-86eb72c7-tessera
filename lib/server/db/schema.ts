@@ -60,6 +60,10 @@ export const imports = pgTable("imports", {
 	schemaVersion: text("schema_version").notNull(),
 	status: text().notNull(),
 	qualityReport: jsonb("quality_report"),
+	reportObjectId: uuid("report_object_id"),
+	reportChecksum: text("report_checksum"),
+	publicationManifest: jsonb("publication_manifest"),
+	publicationManifestHash: text("publication_manifest_hash"),
 	safeError: text("safe_error"),
 	stateVersion: integer("state_version").default(0).notNull(),
 	datasetVersionId: uuid("dataset_version_id"),
@@ -82,6 +86,16 @@ export const imports = pgTable("imports", {
 	check("imports_manifest_hash_check", sql`manifest_hash ~ '^[a-f0-9]{64}$'::text`),
 	check("imports_status_check", sql`status = ANY (ARRAY['uploaded'::text, 'awaiting-validation'::text, 'validating'::text, 'needs_mapping'::text, 'invalid'::text, 'ready'::text, 'failed'::text])`),
 	check("imports_state_version_check", sql`state_version >= 0`),
+	check("imports_report_pair_check", sql`(report_object_id IS NULL) = (report_checksum IS NULL)`),
+	check("imports_report_checksum_check", sql`report_checksum ~ '^[a-f0-9]{64}$'`),
+	check("imports_publication_pair_check", sql`(publication_manifest IS NULL) = (publication_manifest_hash IS NULL)`),
+	check("imports_publication_manifest_check", sql`jsonb_typeof(publication_manifest) = 'array'`),
+	check("imports_publication_hash_check", sql`publication_manifest_hash ~ '^[a-f0-9]{64}$'`),
+	foreignKey({
+		columns: [table.projectId, table.reportObjectId, table.reportChecksum],
+		foreignColumns: [sourceObjects.projectId, sourceObjects.id, sourceObjects.checksum],
+		name: "imports_report_object_fkey",
+	}),
 ]);
 
 export const datasetVersions = pgTable("dataset_versions", {
@@ -496,6 +510,8 @@ export const calculationRuns = pgTable("calculation_runs", {
 	stage: text(),
 	stageStates: jsonb("stage_states").default({}).notNull(),
 	explanationStatus: text("explanation_status").default('not_requested').notNull(),
+	warnings: jsonb("warnings").default([]).notNull(),
+	resultVersion: integer("result_version"),
 	coverageGate: text("coverage_gate").default('incomplete').notNull(),
 	blockingReasons: jsonb("blocking_reasons").default([]).notNull(),
 	safeError: text("safe_error"),
@@ -522,6 +538,8 @@ export const calculationRuns = pgTable("calculation_runs", {
 	check("calculation_runs_coverage_gate_check", sql`coverage_gate = ANY (ARRAY['complete'::text, 'incomplete'::text])`),
 	check("calculation_runs_state_version_check", sql`state_version >= 0`),
 	check("calculation_runs_review_version_check", sql`review_version >= 0`),
+	check("calculation_runs_warnings_check", sql`jsonb_typeof(warnings) = 'array'`),
+	check("calculation_runs_result_version_check", sql`result_version IS NULL OR (result_version > 0 AND status = 'succeeded')`),
 ]);
 
 export const dispatchIntents = pgTable("dispatch_intents", {
@@ -538,6 +556,8 @@ export const dispatchIntents = pgTable("dispatch_intents", {
 	nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true, mode: 'string' }),
 	leaseUntil: timestamp("lease_until", { withTimezone: true, mode: 'string' }),
 	externalTaskId: text("external_task_id"),
+	cancelAttempts: integer("cancel_attempts").default(0).notNull(),
+	cancelAckAt: timestamp("cancel_ack_at", { withTimezone: true, mode: 'string' }),
 	safeError: text("safe_error"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
@@ -558,6 +578,7 @@ export const dispatchIntents = pgTable("dispatch_intents", {
 	check("dispatch_intents_payload_hash_check", sql`payload_hash ~ '^[a-f0-9]{64}$'::text`),
 	check("dispatch_intents_status_check", sql`status = ANY (ARRAY['pending'::text, 'leased'::text, 'sent'::text, 'failed'::text])`),
 	check("dispatch_intents_attempts_check", sql`attempts >= 0`),
+	check("dispatch_intents_cancel_attempts_check", sql`cancel_attempts >= 0`),
 	check("dispatch_intents_check", sql`((operation_type = 'import'::text) AND (import_id IS NOT NULL) AND (run_id IS NULL)) OR ((operation_type = 'calculation'::text) AND (run_id IS NOT NULL) AND (import_id IS NULL))`),
 ]);
 
@@ -578,6 +599,8 @@ export const recommendations = pgTable("recommendations", {
 	unit: text().notNull(),
 	urgency: text().notNull(),
 	numericFactors: jsonb("numeric_factors").notNull(),
+	evidence: jsonb("evidence"),
+	warnings: jsonb("warnings").default([]).notNull(),
 	dataQuality: text("data_quality").notNull(),
 	rationale: text().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -616,6 +639,7 @@ export const recommendations = pgTable("recommendations", {
 	check("recommendations_data_quality_check", sql`data_quality IN ('complete','limited','unavailable')`),
 	check("recommendations_check", sql`((quantity_status = 'known'::text) AND (recommended_quantity IS NOT NULL) AND (data_quality <> 'unavailable'::text) AND (urgency <> 'unknown'::text)) OR ((quantity_status = 'unavailable'::text) AND (recommended_quantity IS NULL) AND (data_quality = 'unavailable'::text))`),
 	check("recommendations_numeric_factors_check", sql`jsonb_typeof(numeric_factors) = 'array'::text`),
+	check("recommendations_warnings_check", sql`jsonb_typeof(warnings) = 'array'`),
 ]);
 
 export const recommendationReviews = pgTable("recommendation_reviews", {

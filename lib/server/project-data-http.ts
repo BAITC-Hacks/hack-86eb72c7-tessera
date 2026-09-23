@@ -3,6 +3,7 @@ import "server-only"
 import { apiData, apiError } from "../contracts/api"
 import { ProjectDataError } from "./project-data-errors"
 import { AuthConfigurationError, InvalidOriginError, UnauthenticatedError } from "./auth-policy"
+import { importHttpStatus } from "./imports/lifecycle"
 
 type Page = { cursor?: string; limit?: number }
 type Services = {
@@ -125,7 +126,10 @@ export function createProjectDataHandlers(dependencies: ProjectDataDependencies)
         const pagination = page(request)
         const input = mutation ? await readJson(request) : undefined
         const services = await dependencies.getServices()
-        return apiData(await operation(services, userId, projectId, importId, input, pagination), { status })
+        const data = await operation(services, userId, projectId, importId, input, pagination)
+        const responseStatus = data && typeof data === "object" && importHttpStatus in data
+          ? Number(data[importHttpStatus]) : status
+        return apiData(data, { status: responseStatus })
       } catch (error) { return safeError(error) }
     }
   }

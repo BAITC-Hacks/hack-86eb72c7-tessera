@@ -5,11 +5,16 @@ import type { z } from 'zod';
 import { DatasetVersionSchema, SourceManifestSchema, type DatasetVersion, ProductSchema, SupplierSchema, WarehouseSchema, ProductSupplierSchema, SaleSchema, MonthlySalesSchema, StockSnapshotSchema, InboundShipmentSchema, StockoutIntervalSchema, CategoryPolicySchema, GrowthAssumptionSchema, SeasonalityIndexSchema, SupplierLeadTimeSchema } from '../../contracts/datasets';
 import type { NormalizedDraft } from '../../contracts/imports';
 import { assertValidatedDraft, importHash } from './service';
+import type { UploadedObject } from '../storage';
+import { appendImportAudit } from './audit';
 
 export interface CommitDependencies {
   pool: Pool;
   /** Только проверенная серверная личность, не значение из HTTP body. */
   userId: string;
+  /** Фоновая публикация привязывается к уже замороженной попытке, а не создаёт импорт заново. */
+  importId?: string;
+  reportObject?: UploadedObject;
   /** Доверенная замена встроенного writer для тестов/специальных схем; та же транзакция, без сети и COMMIT. */
   writeSnapshot?: (client: PoolClient, snapshot: { projectId: string; datasetVersionId: string }, draft: NormalizedDraft) => Promise<void>;
 }
@@ -40,28 +45,68 @@ export async function commitDataset(draft: NormalizedDraft, dependencies: Commit
     })));
     const manifestHash = importHash(persistedManifest);
     const primary = sources[0];
-    const existing = await client.query<{id:string;dataset_version_id:string|null;status:string}>(
-      'SELECT id,dataset_version_id,status FROM imports WHERE project_id=$1 AND checksum=$2 AND manifest_hash=$3 AND adapter_version=$4 AND schema_version=$5 FOR UPDATE',
-      [manifest.projectId,primary.checksum,manifestHash,manifest.adapterVersion,manifest.schemaVersion]);
+    const existing = dependencies.importId
+      ? await client.query<{id:string;dataset_version_id:string|null;status:string;manifest_hash:string}>(
+        'SELECT id,dataset_version_id,status,manifest_hash FROM imports WHERE project_id=$1 AND id=$2 FOR UPDATE',
+        [manifest.projectId,dependencies.importId])
+      : await client.query<{id:string;dataset_version_id:string|null;status:string;manifest_hash:string}>(
+        'SELECT id,dataset_version_id,status,manifest_hash FROM imports WHERE project_id=$1 AND checksum=$2 AND manifest_hash=$3 AND adapter_version=$4 AND schema_version=$5 FOR UPDATE',
+        [manifest.projectId,primary.checksum,manifestHash,manifest.adapterVersion,manifest.schemaVersion]);
     if (existing.rows[0]) {
       const previous = existing.rows[0];
-      if (previous.status !== 'ready' || !previous.dataset_version_id) throw new Error('Импорт уже обрабатывается или требует исправления');
-      const found = await client.query<{created_at:Date}>('SELECT created_at FROM dataset_versions WHERE project_id=$1 AND id=$2', [manifest.projectId,previous.dataset_version_id]);
-      if (!found.rows[0]) throw new Error('Версия данных недоступна');
-      const result = dataset(previous.dataset_version_id,previous.id,found.rows[0].created_at.toISOString());
-      await client.query('COMMIT');
-      return result;
+      if (dependencies.importId && previous.manifest_hash !== importHash(manifest)) throw new Error('Manifest попытки не совпадает с проверенным');
+      if (previous.status === 'ready' && previous.dataset_version_id) {
+        const found = await client.query<{created_at:Date}>('SELECT created_at FROM dataset_versions WHERE project_id=$1 AND id=$2', [manifest.projectId,previous.dataset_version_id]);
+        if (!found.rows[0]) throw new Error('Версия данных недоступна');
+        const result = dataset(previous.dataset_version_id,previous.id,found.rows[0].created_at.toISOString());
+        await client.query('COMMIT');
+        return result;
+      }
+      if (!dependencies.importId || previous.status !== 'validating') throw new Error('Импорт уже обрабатывается или требует исправления');
+    } else if (dependencies.importId) {
+      throw new Error('Попытка импорта недоступна');
     }
-    const importId = randomUUID();
+    const importId = dependencies.importId ?? randomUUID();
     const datasetId = randomUUID();
     const quality = {checkedRows:report.checkedRows,acceptedRows:report.acceptedRows,rejectedRows:0,issues:report.issues.filter(issue=>issue.sourceType !== null && issue.severity === 'warning').map(issue=>({code:issue.code,severity:'warning',sourceType:issue.sourceType,rowNumber:issue.rowNumber,count:1}))};
-    await client.query(`INSERT INTO imports(id,project_id,source_object_id,checksum,manifest,manifest_hash,adapter_version,schema_version,status,quality_report) VALUES($1,$2,$3,$4,$5::jsonb,$6,$7,$8,'validating',$9::jsonb)`,
-      [importId,manifest.projectId,primary.sourceObjectId,primary.checksum,JSON.stringify(persistedManifest),manifestHash,manifest.adapterVersion,manifest.schemaVersion,JSON.stringify(quality)]);
+    if (!dependencies.importId) {
+      await client.query(`INSERT INTO imports(id,project_id,source_object_id,checksum,manifest,manifest_hash,adapter_version,schema_version,status,quality_report) VALUES($1,$2,$3,$4,$5::jsonb,$6,$7,$8,'validating',$9::jsonb)`,
+        [importId,manifest.projectId,primary.sourceObjectId,primary.checksum,JSON.stringify(persistedManifest),manifestHash,manifest.adapterVersion,manifest.schemaVersion,JSON.stringify(quality)]);
+    }
+    if (dependencies.reportObject) {
+      const object = dependencies.reportObject;
+      if (object.projectId !== manifest.projectId || object.id !== importId || object.purpose !== 'report' || !object.confirmed)
+        throw new Error('Отчёт не соответствует попытке импорта');
+      await client.query(`INSERT INTO source_objects(id,project_id,object_key,checksum,byte_size,content_type,purpose)
+        VALUES($1,$2,$3,$4,$5,$6,'report') ON CONFLICT(id) DO NOTHING`,
+        [object.id,object.projectId,object.key,object.sha256Hex,object.sizeBytes,object.contentType]);
+    }
+    if (dependencies.importId) {
+      const validated = await client.query<{state_version:number}>(`UPDATE imports SET
+        publication_manifest=$3::jsonb,publication_manifest_hash=$4,quality_report=$5::jsonb,
+        state_version=state_version+1,updated_at=now()
+        WHERE project_id=$1 AND id=$2 AND status='validating'
+          AND (publication_manifest IS NULL OR publication_manifest=$3::jsonb)
+          AND (publication_manifest_hash IS NULL OR publication_manifest_hash=$4)
+        RETURNING state_version`,
+        [manifest.projectId,importId,JSON.stringify(persistedManifest),manifestHash,JSON.stringify(quality)]);
+      if (!validated.rows[0]) throw new Error('Сохранённый снимок публикации не совпадает');
+      await appendImportAudit(client,{projectId:manifest.projectId,importId,actorUserId:dependencies.userId,status:'validated',stateVersion:validated.rows[0].state_version});
+    }
     const result = dataset(datasetId,importId,new Date().toISOString());
     await client.query(`INSERT INTO dataset_versions(id,project_id,import_id,manifest,manifest_hash,as_of_date,provenance,source_completeness,schema_version,created_at) VALUES($1,$2,$3,$4::jsonb,$5,$6,$7,$8::jsonb,$9,$10)`,
       [datasetId,manifest.projectId,importId,JSON.stringify(persistedManifest),manifestHash,result.asOfDate,result.provenance,JSON.stringify(result.sourceCompleteness),result.schemaVersion,result.createdAt]);
     await (dependencies.writeSnapshot ?? writeNormalizedSnapshot)(client,{projectId:manifest.projectId,datasetVersionId:datasetId},snapshotDraft);
-    await client.query("UPDATE imports SET dataset_version_id=$1,status='ready',state_version=state_version+1,updated_at=now() WHERE id=$2",[datasetId,importId]);
+    let published;
+    if (dependencies.reportObject) {
+      published = await client.query<{state_version:number}>(`UPDATE imports SET dataset_version_id=$1,status='ready',quality_report=$3::jsonb,
+        report_object_id=$4,report_checksum=$5,state_version=state_version+1,updated_at=now()
+        WHERE id=$2 AND status='validating' RETURNING state_version`,[datasetId,importId,JSON.stringify(quality),dependencies.reportObject.id,dependencies.reportObject.sha256Hex]);
+    } else {
+      published = await client.query<{state_version:number}>("UPDATE imports SET dataset_version_id=$1,status='ready',quality_report=$3::jsonb,state_version=state_version+1,updated_at=now() WHERE id=$2 AND status='validating' RETURNING state_version",[datasetId,importId,JSON.stringify(quality)]);
+    }
+    if (!published.rows[0]) throw new Error('Попытка изменила состояние при публикации');
+    await appendImportAudit(client,{projectId:manifest.projectId,importId,actorUserId:dependencies.userId,status:'ready',stateVersion:published.rows[0].state_version});
     await client.query('COMMIT');
     return result;
 
