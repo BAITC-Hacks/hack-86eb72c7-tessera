@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { randomUUID } from 'node:crypto';
+import { readdir } from 'node:fs/promises';
 import { applyMigrations } from '../../lib/server/db/migrate';
 import { createRepositories, DatabaseAccessError, DatabaseConflictError, canonicalJsonHash, runRequestHash, approvalRequestHash, canonicalDecimal } from '../../lib/server/db';
 import { withPostgres } from '../helpers/postgres';
@@ -37,7 +38,9 @@ test('migration is repeatable, checksum-tracked, and creates every required tabl
   for (const name of ['projects','source_objects','imports','dataset_versions','products','product_suppliers','monthly_sales','seasonality_indices','sales','stock_snapshots','inbound_shipments','stockout_intervals','category_policies','growth_assumptions','supplier_lead_times','calculation_runs','dispatch_intents','recommendations','recommendation_reviews','approvals','export_artifacts','run_events','audit_events']) {
     assert.ok(tables.rows.some((row) => row.tablename === name), name);
   }
-  assert.equal((await pool.query('SELECT count(*) FROM schema_migrations')).rows[0].count, '1');
+  const expectedMigrations = (await readdir('drizzle')).filter(name => /^\d+_[a-z0-9_]+\.sql$/.test(name)).sort();
+  const appliedMigrations = await pool.query<{ name: string }>('SELECT name FROM schema_migrations ORDER BY name');
+  assert.deepEqual(appliedMigrations.rows.map(row => row.name), expectedMigrations);
 }));
 
 test('project isolation, immutable datasets, archive guard and atomic dispatch', async () => withPostgres(async (pool) => {
@@ -149,7 +152,10 @@ test('сохранённые поля проходят DTO и full отделё�
   const db = drizzle(pool);
   ProjectSchema.parse(wireTimestamps((await db.select().from(projects).where(eq(projects.id,project.id)))[0]));
   SourceObjectSchema.parse(wireTimestamps((await db.select().from(sourceObjects).where(eq(sourceObjects.id,source.id)))[0]));
-  ImportSchema.parse(wireTimestamps((await db.select().from(imports).where(eq(imports.id,imported.id)))[0]));
+  const { manifestFrozen, ...importDto } = (await db.select().from(imports).where(eq(imports.id,imported.id)))[0];
+  // Служебный флаг миграции06 не входит в публичный DTO импорта04.
+  assert.equal(manifestFrozen, true);
+  ImportSchema.parse(wireTimestamps(importDto));
   DatasetVersionSchema.parse(wireTimestamps((await db.select().from(datasetVersions).where(eq(datasetVersions.id,dataset.id)))[0]));
   CalculationRunSchema.parse(wireTimestamps((await db.select().from(calculationRuns).where(eq(calculationRuns.id,run.id)))[0]));
   for (const intent of await db.select().from(dispatchIntents)) DispatchIntentSchema.parse(wireTimestamps(intent));
