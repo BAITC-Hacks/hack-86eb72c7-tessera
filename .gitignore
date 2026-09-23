@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -40,3 +41,32 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /.omx
+
+# Local agent harness and private case notes
+/AGENTS.override.md
+/.codex/config.toml
+/.codex/agents/coder.toml
+/.codex/agents/tester.toml
+/.codex/agents/researcher.toml
+/.codex/agents/reviewer.toml
+/docs/agent-loop.md
+/docs/case-brief.md
+/docs/architecture-receipt.md
+/scripts/agent_loop.py
+/tests/test_agent_loop.py
+/.agent-loop/
+/.pytest_cache/
+__pycache__/
+*.py[cod]
+/scripts/commit_context.py
+/tests/test_commit_context.py
+/.playwright-cli/
+/output/playwright/
+
+# Private source attachments (also excluded if copied into the repository)
+IEK.zip
+Systeme electric.zip
+HackAlem AI_ Автоматизация формирования заказов поставщикам.docx
+Инструкция_для_участников_HackAlem_AI.pdf
+Инструкция_для_участников_HackAlem_AI (1).pdf
+Правила зачета участия.pdf
