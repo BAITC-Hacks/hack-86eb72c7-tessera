@@ -98,6 +98,7 @@ export function makeFixture() {
         algorithmVersion: "synthetic-replenishment-v1", parametersHash: "a".repeat(64),
       },
       policies: {
+        growthSemanticsByAssumption: [],
         trendCapsByCategory: [{ categoryKey: "cables", maxMonthlyTrendFactor: "2" }],
         unitSteps: [{ productId: IDS.product, unit: "m", step: "1" }],
       },
