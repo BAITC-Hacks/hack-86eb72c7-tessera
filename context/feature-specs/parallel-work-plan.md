@@ -49,8 +49,8 @@ B координирует15, но не переписывает тесты яд
 | --- | --- |
 | `lib/contracts/*`, кроме `api.ts` | A: бизнес-DTO, схемы и статусы для обеих сторон |
 | `lib/contracts/api.ts` | B: общий формат ответа/ошибки из03 |
-| `lib/server/*`, кроме `auth.ts` | A: БД, хранилище, проекты, импорт, запуски, сохранение ИИ-артефактов, review/approval/export |
-| `lib/server/auth.ts` | B: только идентификация; проверка владельца проекта остаётся у A |
+| `lib/server/*`, кроме `auth.ts`, `auth-policy.ts` | A: БД, хранилище, проекты, импорт, запуски, сохранение ИИ-артефактов, review/approval/export |
+| `lib/server/auth.ts`, `lib/server/auth-policy.ts` | B: идентификация и чистые правила проверки сессии/Origin; проверка владельца проекта остаётся у A |
 | `lib/domain/**`, каталог миграций и конфигурация выбранной ORM | A |
 | `app/api/projects/**`, `app/api/runs/**` | A, включая все методы одного `route.ts` |
 | `trigger/**`, кроме `explain-recommendations.ts`; `trigger.config.ts` | A |
