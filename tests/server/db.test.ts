@@ -140,6 +140,10 @@ function wireTimestamps(row: Record<string, unknown>): Record<string, unknown> {
     /(?:At|Until)$/.test(key) && typeof value === 'string' ? new Date(value).toISOString() : value]));
 }
 
+function withoutInternal(row: Record<string, unknown>, fields: string[]): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(row).filter(([key]) => !fields.includes(key)));
+}
+
 test('сохранённые поля проходят DTO и full отделён от diagnostic', async () => withPostgres(async (pool) => {
   const missingStock = makeCompleteness().map(value => value.sourceType === 'stock'
     ? {...value, status:'missing',rowCount:null,reasonCode:'not_provided',confirmedByUserId:null,confirmationReason:null} : value);
@@ -152,16 +156,60 @@ test('сохранённые поля проходят DTO и full отделё�
   const db = drizzle(pool);
   ProjectSchema.parse(wireTimestamps((await db.select().from(projects).where(eq(projects.id,project.id)))[0]));
   SourceObjectSchema.parse(wireTimestamps((await db.select().from(sourceObjects).where(eq(sourceObjects.id,source.id)))[0]));
-  const { manifestFrozen, ...importDto } = (await db.select().from(imports).where(eq(imports.id,imported.id)))[0];
+  const importRow = (await db.select().from(imports).where(eq(imports.id,imported.id)))[0];
   // Служебный флаг миграции06 не входит в публичный DTO импорта04.
-  assert.equal(manifestFrozen, true);
-  ImportSchema.parse(wireTimestamps(importDto));
+  assert.equal(importRow.manifestFrozen, true);
+  ImportSchema.parse(wireTimestamps(withoutInternal(importRow,
+    ['manifestFrozen','reportObjectId','reportChecksum','publicationManifest','publicationManifestHash'])));
   DatasetVersionSchema.parse(wireTimestamps((await db.select().from(datasetVersions).where(eq(datasetVersions.id,dataset.id)))[0]));
-  CalculationRunSchema.parse(wireTimestamps((await db.select().from(calculationRuns).where(eq(calculationRuns.id,run.id)))[0]));
-  for (const intent of await db.select().from(dispatchIntents)) DispatchIntentSchema.parse(wireTimestamps(intent));
+  const runRow = (await db.select().from(calculationRuns).where(eq(calculationRuns.id,run.id)))[0];
+  CalculationRunSchema.parse(wireTimestamps(withoutInternal(runRow, ['warnings','resultVersion'])));
+  for (const intent of await db.select().from(dispatchIntents)) {
+    DispatchIntentSchema.parse(wireTimestamps(withoutInternal(intent, ['cancelAttempts','cancelAckAt'])));
+  }
 
   const optionalMissing = makeCompleteness().map(value => ['monthly_sales','material_statement','seasonality'].includes(value.sourceType)
     ? {...value,status:'missing',rowCount:null,reasonCode:'not_provided',confirmedByUserId:null,confirmationReason:null} : value);
   const optional = await seedDataset(pool,'optional_owner',undefined,optionalMissing);
   assert.ok((await optional.repo.createCalculationRun(optional.owner,makeRunInput(optional.project.id,optional.dataset.id,'full'))).id);
+}));
+
+test('API14 atomic reviews, precision, ownership, stale conflicts and approval replay', async () => withPostgres(async (pool) => {
+  const { mock } = await import('node:test');
+  const { getPool } = await import('../../lib/server/db/pool');
+  const { readReview, saveReview } = await import('../../lib/server/reviews');
+  const { approveRun } = await import('../../lib/server/approvals');
+  const { renderApprovalCsv } = await import('../../lib/server/exports');
+  process.env.DATABASE_URL ||= 'postgresql://localhost/unused';
+  const connect = mock.method(getPool(), 'connect', () => pool.connect());
+  try {
+    const product=uuid(),warehouse=uuid(),supplier=uuid();
+    const {repo,project,dataset,owner}=await seedDataset(pool, 'clerk_owner', async (client, snapshot) => {
+      await client.query('INSERT INTO products(id,project_id,dataset_version_id,source_key,sku,name,unit,category_key,quantity_precision,quantity_step) VALUES($1,$2,$3,$4,$5,$6,$7,$8,2,0.25)',[product,snapshot.projectId,snapshot.datasetVersionId,'p','001','Товар','m','category']);
+      await client.query('INSERT INTO warehouses(id,project_id,dataset_version_id,source_key,name) VALUES($1,$2,$3,$4,$5)',[warehouse,snapshot.projectId,snapshot.datasetVersionId,'w','Склад']);
+      await client.query('INSERT INTO suppliers(id,project_id,dataset_version_id,source_key,name) VALUES($1,$2,$3,$4,$5)',[supplier,snapshot.projectId,snapshot.datasetVersionId,'s','Поставщик']);
+      await client.query('INSERT INTO product_suppliers(id,project_id,dataset_version_id,product_id,supplier_id) VALUES($1,$2,$3,$4,$5)',[uuid(),snapshot.projectId,snapshot.datasetVersionId,product,supplier]);
+    });
+    const run=await repo.createCalculationRun(owner,makeRunInput(project.id,dataset.id,'review14'));
+    const rec=await repo.addRecommendation(owner,{projectId:project.id,datasetVersionId:dataset.id,runId:run.id,productId:product,warehouseId:warehouse,supplierId:supplier,recommendedQuantity:'2',quantityStatus:'known',unit:'m',urgency:'planned',calculationVersion:'1',supplierArticle:null,projectedStockoutDate:null,shortageDays:null,numericFactors:[],dataQuality:'complete',rationale:'Расчёт'});
+    await pool.query("UPDATE calculation_runs SET status='succeeded',coverage_gate='complete',state_version=state_version+1 WHERE id=$1",[run.id]);
+    const patch=(quantity:string,version=0)=>({reviewVersion:version,changes:[{recommendationId:rec.id,reviewedQty:quantity,reason:'Коррекция менеджера'}]});
+    await assert.rejects(readReview('other',run.id),DatabaseAccessError);
+    await assert.rejects(saveReview(owner,run.id,patch('1.13')));
+    assert.equal((await readReview(owner,run.id)).reviewVersion,0);
+    const concurrent=await Promise.allSettled([saveReview(owner,run.id,patch('1.25')),saveReview(owner,run.id,patch('1.5'))]);
+    assert.equal(concurrent.filter(r=>r.status==='fulfilled').length,1);
+    const review=await readReview(owner,run.id);
+    assert.equal(review.reviewVersion,1);
+    assert.equal(review.rows[0].recommendedQty,'2');
+    const request={reviewVersion:1,expectedSnapshotHash:review.snapshotHash,confirmed:true,idempotencyKey:'approve14'};
+    const approval=await approveRun(owner,run.id,request);
+    assert.deepEqual(await approveRun(owner,run.id,request),approval);
+    await assert.rejects(approveRun(owner,run.id,{...request,reviewVersion:2}),DatabaseConflictError);
+    assert.equal((await readReview(owner,run.id)).canExport,true);
+    await saveReview(owner,run.id,patch('0',1));
+    assert.equal((await readReview(owner,run.id)).canExport,false);
+    const csv=renderApprovalCsv([{id:rec.id,supplier:'=cmd',sku:'001',name:'Кабель "А"',warehouse:'Склад',quantity:'1.25',unit:'m',urgency:'planned',rationale:'Расчёт\nстрока'}]).toString('utf8');
+    assert.ok(csv.startsWith('\ufeff')); assert.ok(csv.includes("'=cmd")); assert.ok(csv.includes('"001"')); assert.ok(csv.includes('"1.25"'));
+  } finally { connect.mock.restore(); }
 }));

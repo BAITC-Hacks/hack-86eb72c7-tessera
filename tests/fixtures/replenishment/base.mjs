@@ -102,6 +102,7 @@ export function makeFixture() {
         trendCapsByCategory: [{ categoryKey: "cables", maxMonthlyTrendFactor: "2" }],
         growthSemanticsByAssumption: [],
         unitSteps: [{ productId: IDS.product, unit: "m", step: "1" }],
+        growthSemanticsByAssumption: [],
       },
     },
   };

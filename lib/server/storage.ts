@@ -100,6 +100,14 @@ function validateMetadata(object: UploadedObject): void {
   }
 }
 
+function readFailure(error: unknown): StorageError {
+  const code = error && typeof error === "object" && "code" in error ? String(error.code) : ""
+  const status = error && typeof error === "object" && "$metadata" in error
+    ? Number((error.$metadata as { httpStatusCode?: number })?.httpStatusCode) : NaN
+  return new StorageError(["ECONNRESET", "ETIMEDOUT", "EAI_AGAIN", "ECONNREFUSED"].includes(code) || status >= 500
+    ? "STORAGE_UNAVAILABLE" : "INTEGRITY_FAILED")
+}
+
 export function createPrivateStorage(options: StorageOptions) {
   if (!options.client || typeof options.bucket !== "string" ||
       typeof options.authorizeProject !== "function" || typeof options.resolveObject !== "function" ||
@@ -159,6 +167,103 @@ export function createPrivateStorage(options: StorageOptions) {
 
   return {
     assertPrivateBucket,
+
+    async readSource(input: { userId: string; projectId: string; objectId: string }): Promise<Uint8Array> {
+      await assertAuthorized(input.userId, input.projectId, "download")
+      if (!validUuid(input.objectId)) throw new StorageError("INVALID_INPUT")
+      const object = await resolveObject(input)
+      if (!object || object.id !== input.objectId || object.projectId !== input.projectId || object.purpose !== "source")
+        throw new StorageError("NOT_FOUND")
+      validateMetadata(object)
+      await assertPrivateBucket()
+      try {
+        const head = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: object.key, ChecksumMode: "ENABLED" }))
+        const metadata = head.Metadata
+        const expected = Buffer.from(object.sha256Hex, "hex").toString("base64")
+        if (head.ContentLength !== object.sizeBytes || head.ContentType !== object.contentType ||
+            metadata?.["project-id"] !== object.projectId || metadata?.purpose !== "source" ||
+            metadata?.["sha256-hex"] !== object.sha256Hex ||
+            (head.ChecksumType !== "COMPOSITE" && head.ChecksumSHA256 && head.ChecksumSHA256 !== expected))
+          throw new StorageError("INTEGRITY_FAILED")
+      } catch (error) {
+        if (error instanceof StorageError) throw error
+        throw readFailure(error)
+      }
+      try {
+        const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: object.key }))
+        if (!response.Body) throw new Error("empty body")
+        const chunks: Uint8Array[] = []
+        let length = 0
+        for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
+          length += chunk.length
+          if (length > MAX_OBJECT_BYTES || length > object.sizeBytes) throw new Error("oversize")
+          chunks.push(chunk)
+        }
+        const bytes = Buffer.concat(chunks, length)
+        if (length !== object.sizeBytes || createHash("sha256").update(bytes).digest("hex") !== object.sha256Hex)
+          throw new Error("checksum")
+        return bytes
+      } catch (error) {
+        if (error instanceof StorageError) throw error
+        throw readFailure(error)
+      }
+    },
+
+    async readImportReport(input: { userId: string; projectId: string; objectId: string }): Promise<unknown> {
+      await assertAuthorized(input.userId, input.projectId, "download")
+      if (!validUuid(input.objectId)) throw new StorageError("INVALID_INPUT")
+      const object = await resolveObject(input)
+      if (!object || object.id !== input.objectId || object.projectId !== input.projectId || object.purpose !== "report")
+        throw new StorageError("NOT_FOUND")
+      validateMetadata(object)
+      await assertPrivateBucket()
+      await verifyHead(object)
+      try {
+        const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: object.key }))
+        if (!response.Body) throw new Error("empty body")
+        const chunks: Uint8Array[] = []
+        let length = 0
+        for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
+          length += chunk.length
+          if (length > MAX_OBJECT_BYTES || length > object.sizeBytes) throw new Error("oversize")
+          chunks.push(chunk)
+        }
+        const bytes = Buffer.concat(chunks, length)
+        if (length !== object.sizeBytes || createHash("sha256").update(bytes).digest("hex") !== object.sha256Hex)
+          throw new Error("checksum")
+        return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) as unknown
+      } catch {
+        throw new StorageError("INTEGRITY_FAILED")
+      }
+    },
+
+    async uploadImportReport(input: { userId: string; projectId: string; importId: string; body: Uint8Array }): Promise<UploadedObject> {
+      await assertAuthorized(input.userId, input.projectId, "upload")
+      if (!validUuid(input.importId) || !(input.body instanceof Uint8Array) ||
+          input.body.length < 1 || input.body.length > MAX_OBJECT_BYTES) throw new StorageError("INVALID_INPUT")
+      const object: UploadedObject = {
+        id: input.importId, projectId: input.projectId, purpose: "report",
+        key: objectKey(input.projectId, "report", input.importId), contentType: "application/json",
+        sizeBytes: input.body.length,
+        sha256Hex: createHash("sha256").update(input.body).digest("hex"), confirmed: true,
+      }
+      await assertPrivateBucket()
+      try {
+        await client.send(new PutObjectCommand({
+          Bucket: bucket, Key: object.key, Body: input.body, ContentLength: object.sizeBytes,
+          ContentType: object.contentType, ChecksumSHA256: Buffer.from(object.sha256Hex, "hex").toString("base64"),
+          IfNoneMatch: "*",
+          Metadata: { "project-id": object.projectId, purpose: "report", "sha256-hex": object.sha256Hex },
+        }))
+      } catch (error) {
+        const conflict = error instanceof Error && (error.name === "PreconditionFailed" ||
+          ("$metadata" in error && (error.$metadata as {httpStatusCode?:number})?.httpStatusCode === 412))
+        if (!conflict) throw new StorageError("STORAGE_UNAVAILABLE")
+        // A prior attempt may have written the same immutable report before its DB transaction.
+      }
+      await verifyHead(object)
+      return object
+    },
 
     async upload(input: {
       userId: string

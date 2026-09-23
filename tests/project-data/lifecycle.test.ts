@@ -5,7 +5,7 @@ import { createProjectService } from "../../lib/server/projects";
 import { createImportLifecycle } from "../../lib/server/imports/lifecycle";
 import { createSyntheticImportFixture } from "../../scripts/generate-import-fixture";
 
-test("PostgreSQL: finalize повторяем, manifest неизменяем, новая попытка не создаёт набор", async () => {
+test("PostgreSQL: finalize и новая попытка сохраняют отдельные намерения без публикации", async () => {
   await withPostgres(async pool => {
     const projects = createProjectService(pool);
     const project = await projects.create("owner-a", {name:"Импорт"});
@@ -35,11 +35,14 @@ test("PostgreSQL: finalize повторяем, manifest неизменяем, н
     await assert.rejects(imports.finalize("owner-a",project.id,created.importId,{manifest:changed}));
     const attempt = await imports.attempt("owner-a",project.id,created.importId,{manifest:changed});
     assert.notEqual(attempt.importId,created.importId);
-    assert.equal(attempt.status,"uploaded");
+    assert.equal(attempt.status,"awaiting-validation");
     assert.equal((await imports.attempt("owner-a",project.id,created.importId,{manifest:changed})).importId,attempt.importId);
     await assert.rejects(imports.get("owner-b",project.id,created.importId));
     assert.equal((await pool.query("SELECT count(*)::int n FROM dataset_versions")).rows[0].n,0);
-    assert.equal((await pool.query("SELECT count(*)::int n FROM dispatch_intents")).rows[0].n,0);
+    const intents = await pool.query("SELECT operation_type,idempotency_key,status FROM dispatch_intents ORDER BY idempotency_key");
+    assert.equal(intents.rowCount,2);
+    assert.deepEqual(intents.rows.map(intent=>intent.operation_type),["import","import"]);
+    assert.deepEqual(intents.rows.map(intent=>intent.status),["pending","pending"]);
     await projects.update("owner-a",project.id,{archived:true});
     await assert.rejects(imports.attempt("owner-a",project.id,created.importId,{manifest:changed}));
   });
