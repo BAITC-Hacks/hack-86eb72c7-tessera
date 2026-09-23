@@ -4,6 +4,7 @@ import {
   SourceKeySchema,
   UtcTimestampSchema, UuidSchema, VersionSchema,
 } from "./primitives";
+import { CalculationPoliciesSchema } from "./calculation-policies";
 
 export const RunModeSchema = z.enum(["full", "diagnostic"]);
 export const CalculationRunStatusSchema = z.enum(["queued", "running", "succeeded", "failed", "cancelled"]);
@@ -38,7 +39,26 @@ export const RunConfigurationSchema = z.strictObject({
   leadTimePolicyVersion: VersionSchema, unitPolicyVersion: VersionSchema,
   algorithmVersion: VersionSchema,
   parametersHash: Sha256Schema,
+  policies: CalculationPoliciesSchema.optional(),
 }).refine((value) => new Set(value.safetyDaysByCategory.map((item) => item.categoryKey)).size === value.safetyDaysByCategory.length, "Повтор политики безопасности категории");
+export const RunRequestConfigurationSchema = RunConfigurationSchema.safeExtend({ policies: CalculationPoliciesSchema });
+export const CreateRunRequestSchema = z.strictObject({
+  datasetVersionId: UuidSchema,
+  scope: CalculationScopeSchema,
+  configuration: RunRequestConfigurationSchema,
+  idempotencyKey: z.string().min(1).max(200).regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/),
+}).refine((value) => JSON.stringify(value.scope.warehouseIds) === JSON.stringify(value.configuration.scope.warehouseIds)
+  && JSON.stringify(value.scope.categoryIds) === JSON.stringify(value.configuration.scope.categoryIds),
+"Область запроса и конфигурации не совпадают");
+export const RunPageQuerySchema = z.strictObject({
+  cursor: z.string().min(1).max(2048).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+});
+export const RecommendationPageQuerySchema = RunPageQuerySchema.safeExtend({
+  supplierId: UuidSchema.optional(),
+  q: z.string().trim().min(1).max(100).optional(),
+  urgency: z.enum(["unknown", "urgent", "planned", "none"]).optional(),
+});
 export const StageStateSchema = z.strictObject({
   status: StageStatusSchema,
   startedAt: UtcTimestampSchema.nullable(), completedAt: UtcTimestampSchema.nullable(),
@@ -65,7 +85,9 @@ export const CalculationRunSchema = z.strictObject({
   createdAt: UtcTimestampSchema,
   startedAt: UtcTimestampSchema.nullable(), finishedAt: UtcTimestampSchema.nullable(),
 }).superRefine((value, ctx) => {
-  if (value.runMode !== value.configuration.runMode || value.asOfDate !== value.configuration.asOfDate || value.algorithmVersion !== value.configuration.algorithmVersion || JSON.stringify(value.scope) !== JSON.stringify(value.configuration.scope)) {
+  if (value.runMode !== value.configuration.runMode || value.asOfDate !== value.configuration.asOfDate || value.algorithmVersion !== value.configuration.algorithmVersion ||
+      JSON.stringify(value.scope.warehouseIds) !== JSON.stringify(value.configuration.scope.warehouseIds) ||
+      JSON.stringify(value.scope.categoryIds) !== JSON.stringify(value.configuration.scope.categoryIds)) {
     ctx.addIssue({ code: "custom", message: "Снимок конфигурации запуска не согласован с полями запуска" });
   }
   if (value.status === "queued" && (value.stage !== null || value.startedAt !== null || value.finishedAt !== null)) {

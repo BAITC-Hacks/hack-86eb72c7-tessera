@@ -18,6 +18,7 @@ import {
   PositiveDecimalStringSchema, PositiveIntSchema, SafeTextSchema, SourceKeySchema, UuidSchema, VersionSchema,
 } from "./primitives";
 import { QuantityStatusSchema, UrgencySchema, NumericFactorSchema, DataQualitySchema } from "./recommendations";
+import type { CalculationPolicies } from "./calculation-policies";
 import {
   BlockingReasonSchema, CoverageGateSchema, type CalculationScopeSchema, type RunConfigurationSchema,
 } from "./runs";
@@ -49,46 +50,8 @@ export type CalculationDataset = Readonly<{
 export type CalculationScope = z.infer<typeof CalculationScopeSchema>;
 export type RunConfiguration = z.infer<typeof RunConfigurationSchema>;
 
-/**
- * Параметры, которых нет в RunConfigurationSchema (04), но которые требуют 07/08.
- * ОТКРЫТО: перенести в снимок запуска/parametersHash до 09, иначе расчёт невоспроизводим.
- */
-export const CalculationPoliciesSchema = z.strictObject({
-  /** 07 шаг 7: максимум месячного множителя тренда — явный параметр категории. */
-  trendCapsByCategory: z.array(z.strictObject({
-    categoryKey: SourceKeySchema, maxMonthlyTrendFactor: PositiveDecimalStringSchema,
-  })).max(200),
-  /** 08 шаг 6: минимальный шаг количества артикула в его основной единице. */
-  unitSteps: z.array(z.strictObject({
-    productId: UuidSchema, unit: SourceKeySchema, step: PositiveDecimalStringSchema,
-  })).max(100_000),
-  /**
-   * 07 шаги 8–9: подтверждённая семантика GrowthAssumption.growthRate.
-   * Перевод в месячный множитель g:
-   *   fractional_rate: 1 + value;  percent: 1 + value/100;  multiplier: value (должен быть > 0);
-   *   period "year" → g^(1/12).
-   * Нет записи для применяемого предположения → внешний рост не применяется, блокирующее
-   * предупреждение `growth_semantics_unconfirmed`. `incremental` допустим только при
-   * independentIncrementConfirmed = true; иначе то же предупреждение.
-   */
-  growthSemanticsByAssumption: z.array(z.strictObject({
-    growthAssumptionId: UuidSchema,
-    valueKind: z.enum(["fractional_rate", "percent", "multiplier"]),
-    period: z.enum(["month", "year"]),
-    independentIncrementConfirmed: z.boolean(),
-  })).max(10_000),
-}).superRefine((value, ctx) => {
-  if (new Set(value.growthSemanticsByAssumption.map((item) => item.growthAssumptionId)).size !== value.growthSemanticsByAssumption.length) {
-    ctx.addIssue({ code: "custom", message: "Повтор семантики предположения роста" });
-  }
-  if (new Set(value.trendCapsByCategory.map((item) => item.categoryKey)).size !== value.trendCapsByCategory.length) {
-    ctx.addIssue({ code: "custom", message: "Повтор ограничения тренда категории" });
-  }
-  if (new Set(value.unitSteps.map((item) => item.productId)).size !== value.unitSteps.length) {
-    ctx.addIssue({ code: "custom", message: "Повтор шага единицы артикула" });
-  }
-});
-export type CalculationPolicies = z.infer<typeof CalculationPoliciesSchema>;
+export { CalculationPoliciesSchema } from "./calculation-policies";
+export type { CalculationPolicies } from "./calculation-policies";
 
 export type CalculationConfiguration = Readonly<{
   run: RunConfiguration;

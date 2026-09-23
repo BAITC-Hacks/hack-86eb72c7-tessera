@@ -140,6 +140,10 @@ function wireTimestamps(row: Record<string, unknown>): Record<string, unknown> {
     /(?:At|Until)$/.test(key) && typeof value === 'string' ? new Date(value).toISOString() : value]));
 }
 
+function withoutInternal(row: Record<string, unknown>, fields: string[]): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(row).filter(([key]) => !fields.includes(key)));
+}
+
 test('сохранённые поля проходят DTO и full отделён от diagnostic', async () => withPostgres(async (pool) => {
   const missingStock = makeCompleteness().map(value => value.sourceType === 'stock'
     ? {...value, status:'missing',rowCount:null,reasonCode:'not_provided',confirmedByUserId:null,confirmationReason:null} : value);
@@ -152,13 +156,17 @@ test('сохранённые поля проходят DTO и full отделё�
   const db = drizzle(pool);
   ProjectSchema.parse(wireTimestamps((await db.select().from(projects).where(eq(projects.id,project.id)))[0]));
   SourceObjectSchema.parse(wireTimestamps((await db.select().from(sourceObjects).where(eq(sourceObjects.id,source.id)))[0]));
-  const { manifestFrozen, ...importDto } = (await db.select().from(imports).where(eq(imports.id,imported.id)))[0];
+  const importRow = (await db.select().from(imports).where(eq(imports.id,imported.id)))[0];
   // Служебный флаг миграции06 не входит в публичный DTO импорта04.
-  assert.equal(manifestFrozen, true);
-  ImportSchema.parse(wireTimestamps(importDto));
+  assert.equal(importRow.manifestFrozen, true);
+  ImportSchema.parse(wireTimestamps(withoutInternal(importRow,
+    ['manifestFrozen','reportObjectId','reportChecksum','publicationManifest','publicationManifestHash'])));
   DatasetVersionSchema.parse(wireTimestamps((await db.select().from(datasetVersions).where(eq(datasetVersions.id,dataset.id)))[0]));
-  CalculationRunSchema.parse(wireTimestamps((await db.select().from(calculationRuns).where(eq(calculationRuns.id,run.id)))[0]));
-  for (const intent of await db.select().from(dispatchIntents)) DispatchIntentSchema.parse(wireTimestamps(intent));
+  const runRow = (await db.select().from(calculationRuns).where(eq(calculationRuns.id,run.id)))[0];
+  CalculationRunSchema.parse(wireTimestamps(withoutInternal(runRow, ['warnings','resultVersion'])));
+  for (const intent of await db.select().from(dispatchIntents)) {
+    DispatchIntentSchema.parse(wireTimestamps(withoutInternal(intent, ['cancelAttempts','cancelAckAt'])));
+  }
 
   const optionalMissing = makeCompleteness().map(value => ['monthly_sales','material_statement','seasonality'].includes(value.sourceType)
     ? {...value,status:'missing',rowCount:null,reasonCode:'not_provided',confirmedByUserId:null,confirmationReason:null} : value);
