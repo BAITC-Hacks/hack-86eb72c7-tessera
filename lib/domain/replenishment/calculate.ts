@@ -70,7 +70,15 @@ export const calculateRecommendations: CalculateRecommendations = (
       || (run.scope.categoryIds.length > 0 && !run.scope.categoryIds.includes(series.categoryKey))) {
       throw new Error("Ряд прогноза не входит в область расчёта");
     }
-    if (series.model && (series.model.growthMode !== run.growthMode || series.model.startDate > addDays(run.asOfDate, 1))) {
+    // 07 не применяет неподтверждённый рост: сохраняет нейтральную модель и
+    // блокирующее предупреждение. Такая строка ниже станет unavailable, не заказом.
+    const blockedGrowthFallback = series.model?.growthMode === "none"
+      && forecast.coverage.coverageGate === "incomplete" && !forecast.coverage.canApprove
+      && forecast.warnings.some((warning) => warning.severity === "blocking"
+        && (warning.code === "growth_semantics_unconfirmed" || warning.code === "growth_source_missing")
+        && (warning.key === null || sameKey(warning.key, series.key)));
+    if (series.model && ((series.model.growthMode !== run.growthMode && !blockedGrowthFallback)
+      || series.model.startDate > addDays(run.asOfDate, 1))) {
       throw new Error("Модель прогноза не согласована с параметрами запуска");
     }
   }
