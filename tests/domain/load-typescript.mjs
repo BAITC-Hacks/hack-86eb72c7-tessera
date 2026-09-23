@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { registerHooks } from "node:module";
 import { fileURLToPath } from "node:url";
 
-// Только тестовый процесс: поддержка extensionless-импортов чистого ядра и DTO.
+// Resolve extensionless TypeScript imports in the test process, including server-only adapters.
 registerHooks({
   resolve(specifier, context, nextResolve) {
     if (

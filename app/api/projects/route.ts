@@ -2,5 +2,5 @@ import { projectDataHandlers } from "@/lib/server/project-data-runtime"
 
 export const runtime = "nodejs"
 
-export const GET = projectDataHandlers.listProjects
-export const POST = projectDataHandlers.createProject
+export function GET(request: Request) { return projectDataHandlers.listProjects(request) }
+export function POST(request: Request) { return projectDataHandlers.createProject(request) }

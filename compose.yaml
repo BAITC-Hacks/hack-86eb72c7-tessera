@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: tessera
+      POSTGRES_USER: tessera
+      POSTGRES_PASSWORD: ${TESSERA_DB_PASSWORD:?Set TESSERA_DB_PASSWORD in .env.docker}
+    volumes:
+      - tessera-postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tessera -d tessera"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
+    command: ["node", "--conditions=react-server", "--import", "tsx", "scripts/migrate-data-model.ts"]
+    environment:
+      DATABASE_URL: postgres://tessera:${TESSERA_DB_PASSWORD:?Set TESSERA_DB_PASSWORD in .env.docker}@db:5432/tessera
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      DATABASE_URL: postgres://tessera:${TESSERA_DB_PASSWORD:?Set TESSERA_DB_PASSWORD in .env.docker}@db:5432/tessera
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "127.0.0.1:${TESSERA_PORT:-3000}:3000"
+    volumes:
+      - ./.agent-loop/source-data:/app/local-source-data:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  tessera-postgres:

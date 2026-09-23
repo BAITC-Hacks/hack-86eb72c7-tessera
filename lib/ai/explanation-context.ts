@@ -1,3 +1,5 @@
+import { DecimalStringSchema } from "../contracts/primitives";
+
 export const PROMPT_VERSION = "refs-v1";
 export const SCHEMA_VERSION = "refs-v1";
 
@@ -77,7 +79,6 @@ export type SupplierAttention = Readonly<{
 }>;
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
-const DECIMAL = /^-?(?:0|[1-9]\d{0,17})(?:\.\d{1,6})?$/;
 const own = (object: object, key: string): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
 export function validId(value: unknown): value is string {
@@ -86,7 +87,7 @@ export function validId(value: unknown): value is string {
 
 function validFact(value: Fact): boolean {
   return typeof value === "object" && value !== null && validId(value.factId) && own(FACT_LABELS, value.kind) &&
-    typeof value.value === "string" && value.value.length <= 32 && DECIMAL.test(value.value) &&
+    typeof value.value === "string" && value.value.length <= 32 && DecimalStringSchema.safeParse(value.value).success &&
     ["шт.", "м", "дн.", "%", "×"].includes(value.unit);
 }
 
