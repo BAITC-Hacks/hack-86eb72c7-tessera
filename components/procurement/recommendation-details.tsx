@@ -6,7 +6,7 @@ export function RecommendationDetails({ row, degraded }: { row: Recommendation; 
       <div>
         <h4 className="text-sm font-semibold">Числовая расшифровка · {row.sku}</h4>
         <p className="mt-1 text-sm text-muted-foreground">Детерминированное обоснование: {row.summary}.</p>
-        <p className="mt-1 text-xs text-muted-foreground">{degraded ? "ИИ-пояснение недоступно; числовые факты сохранены." : "ИИ-пояснение в этом демо не вычисляется; показаны заранее подготовленные факты."}</p>
+        {degraded && <p className="mt-1 text-xs text-muted-foreground">ИИ-пояснение недоступно; числовые факты сохранены.</p>}
       </div>
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {row.facts.map((fact) => (

@@ -102,3 +102,31 @@ test("неверные даты, обратный период и дни до н
   assert.throws(() => sumDailyForecast(model, "2025-02-01", "2025-01-31"));
   assert.throws(() => sumDailyForecast(model, "2025-02-29", "2025-03-01"));
 });
+
+test("decimal-перегрузка сохраняет большое количество за пределами точности Number", () => {
+  const model = makeModel({ baseAtStart: "900719925474099.3", trendMonthlyFactor: "1" });
+  assert.equal(sumDailyForecast(model, "2025-01-01", "2025-01-10", "decimal"), "9007199254740993");
+  assert.equal(typeof sumDailyForecast(model, "2025-01-01", "2025-01-10"), "number");
+});
+
+test("decimal округляет после суммирования; числовой API не округляет до8 знаков", () => {
+  const model = makeModel({
+    baseAtStart: "0.00000001", trendMonthlyFactor: "1", seasonalIndexByMonth: Array(12).fill("0.4"),
+  });
+  assert.equal(sumDailyForecast(model, "2025-01-01", "2025-01-01", "decimal"), "0");
+  assert.equal(sumDailyForecast(model, "2025-01-01", "2025-01-03", "decimal"), "0.00000001");
+  assert.equal(sumDailyForecast(model, "2025-01-01", "2025-01-03"), 0.000000012);
+  model.seasonalIndexByMonth.fill("0.5");
+  assert.equal(sumDailyForecast(model, "2025-01-01", "2025-01-01", "decimal"), "0.00000001");
+});
+
+test("decimal сохраняет малую дробь рядом с большим количеством", () => {
+  const model = makeModel({ baseAtStart: "9007199254740993.00000001", trendMonthlyFactor: "1" });
+  assert.equal(sumDailyForecast(model, "2025-01-01", "2025-01-01", "decimal"), "9007199254740993.00000001");
+});
+
+test("decimal проверяет предел numeric(30,8) и допустимый интервал", () => {
+  const model = makeModel({ baseAtStart: "9999999999999999999999", trendMonthlyFactor: "1" });
+  assert.throws(() => sumDailyForecast(model, "2025-01-01", "2025-01-02", "decimal"));
+  assert.throws(() => sumDailyForecast(model, "2025-01-02", "2025-01-01", "decimal"));
+});

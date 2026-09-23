@@ -2,4 +2,4 @@ import { projectDataHandlers } from "@/lib/server/project-data-runtime"
 
 export const runtime = "nodejs"
 
-export const POST = projectDataHandlers.createAttempt
+export function POST(request: Request, context: RouteContext<"/api/projects/[projectId]/imports/[importId]/attempts">) { return projectDataHandlers.createAttempt(request, context) }
