@@ -19,3 +19,15 @@ export const ApproveRequestSchema = z.strictObject({
 });
 export type ReviewPatch = z.infer<typeof ReviewPatchSchema>;
 export type ApproveRequest = z.infer<typeof ApproveRequestSchema>;
+
+/** Проверка без Number/округления, по политике неизменяемого товара. */
+export function validateReviewQuantity(quantity: string, precision: number | null, step: string | null): void {
+  const fail = () => { throw new z.ZodError([{ code: "custom", path: ["reviewedQty"], message: "Количество не соответствует политике точности и шага SKU; при отсутствии политики нужен новый импорт." }]); };
+  if (precision === null || !Number.isInteger(precision) || precision < 0 || precision > 8 || step === null) return fail();
+  const pattern = /^(?:0|[1-9]\d{0,21})(?:\.\d{1,8})?$/;
+  if (!pattern.test(quantity) || !pattern.test(step)) return fail();
+  if ((quantity.split(".")[1] ?? "").replace(/0+$/, "").length > precision) return fail();
+  const scaled = (value: string) => { const [whole, fraction = ""] = value.split("."); return BigInt(whole + fraction.padEnd(8, "0")); };
+  const unit = scaled(step);
+  if (unit <= BigInt(0) || scaled(quantity) % unit !== BigInt(0)) fail();
+}

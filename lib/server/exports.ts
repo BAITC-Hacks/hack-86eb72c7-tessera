@@ -100,8 +100,12 @@ export async function exportApproval(userId: string, runId: string, approvalId: 
       await client.query("BEGIN");
       await currentApproval(client, userId, runId, approvalId);
       const source = await client.query<{ id: string }>(`INSERT INTO source_objects(id,project_id,object_key,checksum,byte_size,content_type,purpose)
-        VALUES($1,$2,$3,$4,$5,'text/csv','export') ON CONFLICT(project_id,checksum) DO UPDATE SET checksum=EXCLUDED.checksum RETURNING id`,
+        VALUES($1,$2,$3,$4,$5,'text/csv','export') ON CONFLICT(project_id,checksum) DO NOTHING RETURNING id`,
       [object.id, approval.project_id, object.key, checksum, body.byteLength]);
+      if (!source.rowCount) {
+        const existingSource = await client.query<{ id: string }>("SELECT id FROM source_objects WHERE project_id=$1 AND checksum=$2", [approval.project_id,checksum]);
+        source.rows = existingSource.rows;
+      }
       await client.query(`INSERT INTO export_artifacts(id,project_id,approval_id,source_object_id,checksum,format,format_version)
         VALUES($1,$2,$3,$4,$5,'csv',$6) ON CONFLICT(approval_id,format_version) DO NOTHING`,
       [randomUUID(), approval.project_id, approvalId, source.rows[0].id, checksum, EXPORT_FORMAT_VERSION]);

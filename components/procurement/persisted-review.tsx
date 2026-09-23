@@ -59,7 +59,7 @@ function ReviewSession({ runId }: { runId: string }) {
     <p className="text-sm">Демонстрационный формат, не подтверждён для 1С. Скачивание не означает отправку поставщику.</p>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {!review && !error && <p role="status">Загрузка проверки…</p>}
-    <Button variant="outline" disabled={busy || dirty} onClick={() => void action(async () => setReview(await readServerReview(runId)))}>Обновить результат</Button>
+    <Button variant="outline" disabled={busy} onClick={() => { if (!dirty || window.confirm("Отменить несохранённые изменения и загрузить текущую редакцию?")) void action(async () => { setReview(await readServerReview(runId)); setDrafts({}); }); }}>Обновить результат</Button>
     {review && <>
       <p className="text-sm">Редакция {review.reviewVersion}. Всего позиций: {review.rows.length}.</p>
       <fieldset disabled={busy} className="space-y-3">
@@ -68,7 +68,8 @@ function ReviewSession({ runId }: { runId: string }) {
           const draft = drafts[row.recommendationId] ?? { quantity: row.quantity ?? "", reason: row.reason ?? "" };
           const update = (next: Draft) => setDrafts((current) => ({ ...current, [row.recommendationId]: next }));
           return <div key={row.recommendationId} className="flex flex-wrap gap-2 border-b border-border pb-3">
-            <label className="text-sm">{row.recommendationId} · {row.unit}<input aria-label={`Количество ${row.recommendationId}`} disabled={row.quantity === null} inputMode="decimal" value={draft.quantity} onChange={(event) => update({ ...draft, quantity: event.target.value })} className="ml-2 rounded-md border border-input px-2 py-1" /></label>
+            <label className="text-sm">{row.sku} · {row.name} · {row.unit}<input aria-label={`Количество ${row.recommendationId}`} disabled={row.quantity === null || row.quantityStep === null} inputMode="decimal" value={draft.quantity} onChange={(event) => update({ ...draft, quantity: event.target.value })} className="ml-2 rounded-md border border-input px-2 py-1" /></label>
+            {row.quantityStep === null && <p className="text-sm">Для изменения нужен новый импорт с политикой единицы SKU.</p>}
             <label className="text-sm">Причина<input maxLength={1000} value={draft.reason} onChange={(event) => update({ ...draft, reason: event.target.value })} className="ml-2 rounded-md border border-input px-2 py-1" /></label>
           </div>;
         })}

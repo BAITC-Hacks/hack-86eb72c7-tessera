@@ -3,7 +3,7 @@ import { z } from "zod";
 const ReviewSchema = z.object({
   runId: z.string(), reviewVersion: z.number().int().nonnegative(), snapshotHash: z.string(),
   rows: z.array(z.object({ recommendationId: z.string(), recommendedQty: z.string().nullable(),
-    reviewedQty: z.string().nullable(), quantity: z.string().nullable(), reason: z.string().nullable(), unit: z.string(), supplierId: z.string().optional() })),
+    reviewedQty: z.string().nullable(), quantity: z.string().nullable(), reason: z.string().nullable(), unit: z.string(), supplierId: z.string(), sku: z.string(), name: z.string(), quantityPrecision: z.number().nullable(), quantityStep: z.string().nullable() })),
   approval: z.object({ id: z.string(), reviewVersion: z.number(), authorUserId: z.string(), approvedAt: z.string() }).nullable(),
   canApprove: z.boolean(), canExport: z.boolean(),
 });

@@ -134,6 +134,8 @@ export const UnitConversionSchema = z.strictObject({
   fromUnit: SourceKeySchema, toUnit: SourceKeySchema, factor: PositiveDecimalStringSchema,
 }).refine((value) => value.fromUnit !== value.toUnit, "Единицы конверсии должны отличаться");
 export const ProductSchema = ReferenceSchema.extend({
+  quantityPrecision: z.number().int().min(0).max(8).nullable().default(null),
+  quantityStep: PositiveDecimalStringSchema.nullable().default(null),
   sku: SourceKeySchema, name: SafeTextSchema.max(200), unit: SourceKeySchema,
   categoryKey: SourceKeySchema, conversions: z.array(UnitConversionSchema).max(20),
   createdAt: UtcTimestampSchema,

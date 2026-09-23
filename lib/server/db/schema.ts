@@ -146,6 +146,8 @@ export const warehouses = pgTable("warehouses", {
 ]);
 
 export const products = pgTable("products", {
+	quantityPrecision: integer("quantity_precision"),
+	quantityStep: numeric("quantity_step", { precision: 30, scale: 8 }),
 	id: uuid().primaryKey().notNull(),
 	projectId: uuid("project_id").notNull(),
 	datasetVersionId: uuid("dataset_version_id").notNull(),

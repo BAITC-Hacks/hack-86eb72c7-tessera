@@ -21,6 +21,7 @@ type RunRow = {
   coverage_gate: string;
   blocking_reasons: unknown;
   safe_error: string | null;
+  configuration: { runMode?: string };
 };
 
 type LineRow = {
@@ -74,7 +75,7 @@ export async function approveRun(userId: string, runId: string, input: unknown) 
     const state = run.rows[0];
     if (
       state.review_version !== request.reviewVersion ||
-      state.run_mode !== 'full' || state.status !== 'succeeded' ||
+      state.configuration.runMode !== 'full' || state.run_mode !== 'full' || state.status !== 'succeeded' ||
       state.coverage_gate !== 'complete' ||
       !Array.isArray(state.blocking_reasons) || state.blocking_reasons.length > 0 ||
       state.safe_error
@@ -116,6 +117,9 @@ export async function approveRun(userId: string, runId: string, input: unknown) 
       [randomUUID(), state.project_id, runId, request.reviewVersion, snapshotHash,
         userId, request.idempotencyKey, requestHash],
     );
+    await client.query(`INSERT INTO audit_events(id,project_id,sequence_no,actor_user_id,action,resource_type,resource_id,safe_payload)
+      SELECT $1,$2,COALESCE(MAX(sequence_no),0)+1,$3,'approved','approval',$4,$5::jsonb FROM audit_events WHERE project_id=$2`,
+      [randomUUID(),state.project_id,userId,result.rows[0].id,JSON.stringify({runId,safeCode:null})]);
     await client.query('COMMIT');
     return approvalDto(result.rows[0]);
   } catch (error) {
