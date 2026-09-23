@@ -62,7 +62,25 @@ export const CalculationPoliciesSchema = z.strictObject({
   unitSteps: z.array(z.strictObject({
     productId: UuidSchema, unit: SourceKeySchema, step: PositiveDecimalStringSchema,
   })).max(100_000),
+  /**
+   * 07 шаги 8–9: подтверждённая семантика GrowthAssumption.growthRate.
+   * Перевод в месячный множитель g:
+   *   fractional_rate: 1 + value;  percent: 1 + value/100;  multiplier: value (должен быть > 0);
+   *   period "year" → g^(1/12).
+   * Нет записи для применяемого предположения → внешний рост не применяется, блокирующее
+   * предупреждение `growth_semantics_unconfirmed`. `incremental` допустим только при
+   * independentIncrementConfirmed = true; иначе то же предупреждение.
+   */
+  growthSemanticsByAssumption: z.array(z.strictObject({
+    growthAssumptionId: UuidSchema,
+    valueKind: z.enum(["fractional_rate", "percent", "multiplier"]),
+    period: z.enum(["month", "year"]),
+    independentIncrementConfirmed: z.boolean(),
+  })).max(10_000),
 }).superRefine((value, ctx) => {
+  if (new Set(value.growthSemanticsByAssumption.map((item) => item.growthAssumptionId)).size !== value.growthSemanticsByAssumption.length) {
+    ctx.addIssue({ code: "custom", message: "Повтор семантики предположения роста" });
+  }
   if (new Set(value.trendCapsByCategory.map((item) => item.categoryKey)).size !== value.trendCapsByCategory.length) {
     ctx.addIssue({ code: "custom", message: "Повтор ограничения тренда категории" });
   }
@@ -95,7 +113,7 @@ export const CalculationWarningCodeSchema = z.enum([
   // 07
   "short_history", "outlier_manual_review", "customer_anomaly_unavailable",
   "stockout_insufficient_evidence", "seasonality_fallback", "trend_insufficient_evidence",
-  "growth_source_missing", "incomplete_month_excluded", "forecast_unavailable",
+  "growth_source_missing", "growth_semantics_unconfirmed", "incomplete_month_excluded", "forecast_unavailable",
   // 08
   "missing_supplier", "ambiguous_supplier", "missing_lead_time", "missing_category_policy",
   "missing_stock", "negative_usable_stock", "unit_mismatch", "missing_unit_step",
