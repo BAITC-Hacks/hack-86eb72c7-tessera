@@ -1,0 +1,17 @@
+{
+  "description": "Передача B: зависимости04; A не изменяет общий package.json/lock.",
+  "dependencies": {
+    "drizzle-orm": "0.45.3",
+    "pg": "8.23.0",
+    "zod": "4.6.5",
+    "@aws-sdk/client-s3": "3.1138.0",
+    "@aws-sdk/s3-request-presigner": "3.1138.0",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.11",
+    "@types/pg": "8.23.1",
+    "tsx": "4.23.15",
+    "embedded-postgres": "18.4.0-beta.17"
+  }
+}
