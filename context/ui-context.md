@@ -9,7 +9,9 @@
 
 ## Назначение и визуальное направление
 
-Сдержанное тёмное рабочее пространство менеджера закупа: выбрать склад/категорию, запустить расчёт, проверить рекомендации по поставщикам, изменить количества и явно утвердить заказ. Отличительная черта — доступная рядом с каждой рекомендацией расшифровка расчёта, а не декоративный дашборд или чат с ИИ.
+Пользователь дополнительно подтвердил минимализм: минимум визуального шума, компактные формы и таблицы, без декоративных панелей, градиентов и лишних карточек.
+
+Сдержанное светлое рабочее пространство менеджера закупа: выбрать склад/категорию, запустить расчёт, проверить рекомендации по поставщикам, изменить количества и явно утвердить заказ. Отличительная черта — доступная рядом с каждой рекомендацией расшифровка расчёта, а не декоративный дашборд или чат с ИИ.
 
 Нейтральные поверхности, компактные таблицы, читаемые элементы управления, выровненные числовые значения. Расчётная рекомендация и решение человека визуально разделены. Интерфейс не должен утверждать, что модель самостоятельно утвердила или отправила заказ. Не создавать графический холст, инструменты дизайна, универсальный редактор проектов или обязательные декоративные графики.
 
@@ -23,27 +25,27 @@
 
 ## Тема и точные существующие токены
 
-Только тёмная тема: класс `.dark` уже установлен на `<html>` в `app/layout.tsx`. Использовать семантические классы, связанные через `@theme inline` в `app/globals.css`. Не создавать параллельные токены `--bg-base`/`--accent-primary` и не фиксировать цвета непосредственно в компонентах.
+По последнему указанию пользователя — только светлая тема. Удалить `.dark` с `<html>` в `app/layout.tsx`; использовать существующие токены `:root`. Тёмные определения CSS можно сохранить без включения; переключатель тем не требуется. Использовать семантические классы, связанные через `@theme inline` в `app/globals.css`. Не создавать параллельные токены `--bg-base`/`--accent-primary` и не фиксировать цвета непосредственно в компонентах.
 
-| Назначение | Существующая CSS-переменная | Значение `.dark` | Класс |
+| Назначение | Существующая CSS-переменная | Значение `:root` | Класс |
 | --- | --- | --- | --- |
-| Фон пространства | `--background` | `oklch(0.145 0 0)` | `bg-background` |
-| Основной текст | `--foreground` | `oklch(0.985 0 0)` | `text-foreground` |
-| Карточка/текст | `--card` / `--card-foreground` | `oklch(0.205 0 0)` / `oklch(0.985 0 0)` | `bg-card text-card-foreground` |
-| Диалог/текст | `--popover` / `--popover-foreground` | `oklch(0.205 0 0)` / `oklch(0.985 0 0)` | `bg-popover text-popover-foreground` |
-| Основное действие/текст | `--primary` / `--primary-foreground` | `oklch(0.922 0 0)` / `oklch(0.205 0 0)` | `bg-primary text-primary-foreground` |
-| Вторичная поверхность/текст | `--secondary` / `--secondary-foreground` | `oklch(0.269 0 0)` / `oklch(0.985 0 0)` | `bg-secondary text-secondary-foreground` |
-| Приглушённая поверхность/текст | `--muted` / `--muted-foreground` | `oklch(0.269 0 0)` / `oklch(0.708 0 0)` | `bg-muted text-muted-foreground` |
-| Наведение/выделение, текст | `--accent` / `--accent-foreground` | `oklch(0.269 0 0)` / `oklch(0.985 0 0)` | `bg-accent text-accent-foreground` |
-| Ошибка/опасное действие | `--destructive` | `oklch(0.704 0.191 22.216)` | `text-destructive` |
-| Разделители | `--border` | `oklch(1 0 0 / 10%)` | `border-border` |
-| Контур ввода | `--input` | `oklch(1 0 0 / 15%)` | `border-input` |
-| Фокус | `--ring` | `oklch(0.556 0 0)` | `ring-ring` |
-| Боковая панель/текст | `--sidebar` / `--sidebar-foreground` | `oklch(0.205 0 0)` / `oklch(0.985 0 0)` | `bg-sidebar text-sidebar-foreground` |
-| Выделение панели/текст | `--sidebar-accent` / `--sidebar-accent-foreground` | `oklch(0.269 0 0)` / `oklch(0.985 0 0)` | `bg-sidebar-accent text-sidebar-accent-foreground` |
-| Действие панели/текст | `--sidebar-primary` / `--sidebar-primary-foreground` | `oklch(0.488 0.243 264.376)` / `oklch(0.985 0 0)` | `bg-sidebar-primary text-sidebar-primary-foreground` |
-| Разделитель/фокус панели | `--sidebar-border` / `--sidebar-ring` | `oklch(1 0 0 / 10%)` / `oklch(0.556 0 0)` | `border-sidebar-border ring-sidebar-ring` |
-| Ряды графика 1–5 | `--chart-1` … `--chart-5` | `oklch(0.87 0 0)`, `oklch(0.556 0 0)`, `oklch(0.439 0 0)`, `oklch(0.371 0 0)`, `oklch(0.269 0 0)` | `text-chart-1` … `text-chart-5` |
+| Фон пространства | `--background` | `oklch(1 0 0)` | `bg-background` |
+| Основной текст | `--foreground` | `oklch(0.145 0 0)` | `text-foreground` |
+| Карточка/текст | `--card` / `--card-foreground` | `oklch(1 0 0)` / `oklch(0.145 0 0)` | `bg-card text-card-foreground` |
+| Диалог/текст | `--popover` / `--popover-foreground` | `oklch(1 0 0)` / `oklch(0.145 0 0)` | `bg-popover text-popover-foreground` |
+| Основное действие/текст | `--primary` / `--primary-foreground` | `oklch(0.205 0 0)` / `oklch(0.985 0 0)` | `bg-primary text-primary-foreground` |
+| Вторичная поверхность/текст | `--secondary` / `--secondary-foreground` | `oklch(0.97 0 0)` / `oklch(0.205 0 0)` | `bg-secondary text-secondary-foreground` |
+| Приглушённая поверхность/текст | `--muted` / `--muted-foreground` | `oklch(0.97 0 0)` / `oklch(0.556 0 0)` | `bg-muted text-muted-foreground` |
+| Наведение/выделение, текст | `--accent` / `--accent-foreground` | `oklch(0.97 0 0)` / `oklch(0.205 0 0)` | `bg-accent text-accent-foreground` |
+| Ошибка/опасное действие | `--destructive` | `oklch(0.577 0.245 27.325)` | `text-destructive` |
+| Разделители | `--border` | `oklch(0.922 0 0)` | `border-border` |
+| Контур ввода | `--input` | `oklch(0.922 0 0)` | `border-input` |
+| Фокус | `--ring` | `oklch(0.708 0 0)` | `ring-ring` |
+| Боковая панель/текст | `--sidebar` / `--sidebar-foreground` | `oklch(0.985 0 0)` / `oklch(0.145 0 0)` | `bg-sidebar text-sidebar-foreground` |
+| Выделение панели/текст | `--sidebar-accent` / `--sidebar-accent-foreground` | `oklch(0.97 0 0)` / `oklch(0.205 0 0)` | `bg-sidebar-accent text-sidebar-accent-foreground` |
+| Действие панели/текст | `--sidebar-primary` / `--sidebar-primary-foreground` | `oklch(0.205 0 0)` / `oklch(0.985 0 0)` | `bg-sidebar-primary text-sidebar-primary-foreground` |
+| Разделитель/фокус панели | `--sidebar-border` / `--sidebar-ring` | `oklch(0.922 0 0)` / `oklch(0.708 0 0)` | `border-sidebar-border ring-sidebar-ring` |
+| Ряды графика 1–5 | `--chart-1` … `--chart-5` | `oklch(0.87 0 0)` / `oklch(0.269 0 0)` | `text-chart-1` … `text-chart-5` |
 
 Отдельных токенов предупреждения и успеха пока нет. Использовать иконку, явную подпись и нейтральный блок с рамкой; разрушительную семантику оставлять для ошибок и блокировок. Не вводить несогласованную палитру разноцветных меток. Если понадобятся дополнительные семантические цвета, добавлять их централизованно с проверкой контраста. Графики — дополнительная возможность, не условие объяснимости.
 

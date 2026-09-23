@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { Plus, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -9,12 +10,26 @@ import { cn } from "@/lib/utils"
 type ProjectSidebarProps = {
   isOpen: boolean
   onClose: () => void
+  id?: string
+  title?: string
+  closeLabel?: string
+  children?: ReactNode
+  footer?: ReactNode
 }
 
-function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
+function ProjectSidebar({
+  isOpen,
+  onClose,
+  id,
+  title = "Проекты",
+  closeLabel = "Закрыть панель проектов",
+  children,
+  footer,
+}: ProjectSidebarProps) {
   return (
     <aside
-      aria-label="Projects"
+      id={id}
+      aria-label={title}
       aria-hidden={!isOpen}
       inert={!isOpen}
       className={cn(
@@ -23,37 +38,45 @@ function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
       )}
     >
       <header className="flex items-center justify-between border-b border-sidebar-border p-4">
-        <h2 className="text-sm font-semibold">Projects</h2>
+        <h2 className="text-sm font-semibold">{title}</h2>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Close project sidebar"
+          aria-label={closeLabel}
           onClick={onClose}
         >
           <X aria-hidden="true" />
         </Button>
       </header>
 
-      <Tabs defaultValue="my-projects" className="min-h-0 flex-1 overflow-y-auto p-4">
-        <TabsList className="w-full" aria-label="Project lists">
-          <TabsTrigger value="my-projects">My Projects</TabsTrigger>
-          <TabsTrigger value="shared">Shared</TabsTrigger>
-        </TabsList>
-        <TabsContent value="my-projects" className="py-8 text-center text-muted-foreground">
-          No projects yet.
-        </TabsContent>
-        <TabsContent value="shared" className="py-8 text-center text-muted-foreground">
-          No shared projects yet.
-        </TabsContent>
-      </Tabs>
+      {children !== undefined ? (
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+      ) : (
+        <Tabs defaultValue="my-projects" className="min-h-0 flex-1 overflow-y-auto p-4">
+          <TabsList className="w-full" aria-label="Списки проектов">
+            <TabsTrigger value="my-projects">Мои проекты</TabsTrigger>
+            <TabsTrigger value="shared">Общие</TabsTrigger>
+          </TabsList>
+          <TabsContent value="my-projects" className="py-8 text-center text-muted-foreground">
+            Проектов пока нет.
+          </TabsContent>
+          <TabsContent value="shared" className="py-8 text-center text-muted-foreground">
+            Общих проектов пока нет.
+          </TabsContent>
+        </Tabs>
+      )}
 
-      <footer className="border-t border-sidebar-border p-4">
-        <Button type="button" className="w-full">
-          <Plus aria-hidden="true" />
-          New Project
-        </Button>
-      </footer>
+      {footer !== null && (
+        <footer className="border-t border-sidebar-border p-4">
+          {footer === undefined ? (
+            <Button type="button" className="w-full">
+              <Plus aria-hidden="true" />
+              Новый проект
+            </Button>
+          ) : footer}
+        </footer>
+      )}
     </aside>
   )
 }
