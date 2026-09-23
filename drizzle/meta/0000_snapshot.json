@@ -1,0 +1,3496 @@
+{
+  "id": "9ce77b98-a3fe-4b7d-9977-6af5e246a5a8",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.approvals": {
+      "name": "approvals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_version": {
+          "name": "review_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lines_hash": {
+          "name": "lines_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_user_id": {
+          "name": "author_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_hash": {
+          "name": "request_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "approvals_project_id_run_id_fkey": {
+          "name": "approvals_project_id_run_id_fkey",
+          "tableFrom": "approvals",
+          "tableTo": "calculation_runs",
+          "columnsFrom": [
+            "project_id",
+            "run_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "approvals_project_id_id_key": {
+          "name": "approvals_project_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "project_id"
+          ]
+        },
+        "approvals_run_id_review_version_key": {
+          "name": "approvals_run_id_review_version_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "review_version",
+            "run_id"
+          ]
+        },
+        "approvals_run_id_idempotency_key_key": {
+          "name": "approvals_run_id_idempotency_key_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "idempotency_key",
+            "run_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "approvals_review_version_check": {
+          "name": "approvals_review_version_check",
+          "value": "review_version >= 0"
+        },
+        "approvals_lines_hash_check": {
+          "name": "approvals_lines_hash_check",
+          "value": "lines_hash ~ '^[a-f0-9]{64}$'::text"
+        },
+        "approvals_request_hash_check": {
+          "name": "approvals_request_hash_check",
+          "value": "request_hash ~ '^[a-f0-9]{64}$'::text"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.audit_events": {
+      "name": "audit_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sequence_no": {
+          "name": "sequence_no",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource_type": {
+          "name": "resource_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource_id": {
+          "name": "resource_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "safe_payload": {
+          "name": "safe_payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "audit_events_project_id_fkey": {
+          "name": "audit_events_project_id_fkey",
+          "tableFrom": "audit_events",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "audit_events_project_id_sequence_no_key": {
+          "name": "audit_events_project_id_sequence_no_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "project_id",
+            "sequence_no"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "audit_events_sequence_no_check": {
+          "name": "audit_events_sequence_no_check",
+          "value": "sequence_no > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.calculation_runs": {
+      "name": "calculation_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requested_by": {
+          "name": "requested_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scope": {
+          "name": "scope",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "as_of_date": {
+          "name": "as_of_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "configuration": {
+          "name": "configuration",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "configuration_hash": {
+          "name": "configuration_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_hash": {
+          "name": "request_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "algorithm_version": {
+          "name": "algorithm_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "trigger_run_id": {
+          "name": "trigger_run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "run_mode": {
+          "name": "run_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage": {
+          "name": "stage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stage_states": {
+          "name": "stage_states",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "explanation_status": {
+          "name": "explanation_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'not_requested'"
+        },
+        "coverage_gate": {
+          "name": "coverage_gate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'incomplete'"
+        },
+        "blocking_reasons": {
+          "name": "blocking_reasons",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "safe_error": {
+          "name": "safe_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state_version": {
+          "name": "state_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "review_version": {
+          "name": "review_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "calculation_runs_project_id_dataset_version_id_fkey": {
+          "name": "calculation_runs_project_id_dataset_version_id_fkey",
+          "tableFrom": "calculation_runs",
+          "tableTo": "dataset_versions",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "calculation_runs_project_id_id_key": {
+          "name": "calculation_runs_project_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "project_id"
+          ]
+        },
+        "calculation_runs_project_id_dataset_version_id_id_key": {
+          "name": "calculation_runs_project_id_dataset_version_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "id",
+            "project_id"
+          ]
+        },
+        "calculation_runs_project_id_idempotency_key_key": {
+          "name": "calculation_runs_project_id_idempotency_key_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "idempotency_key",
+            "project_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "calculation_runs_configuration_hash_check": {
+          "name": "calculation_runs_configuration_hash_check",
+          "value": "configuration_hash ~ '^[a-f0-9]{64}$'::text"
+        },
+        "calculation_runs_request_hash_check": {
+          "name": "calculation_runs_request_hash_check",
+          "value": "request_hash ~ '^[a-f0-9]{64}$'::text"
+        },
+        "calculation_runs_run_mode_check": {
+          "name": "calculation_runs_run_mode_check",
+          "value": "run_mode = ANY (ARRAY['full'::text, 'diagnostic'::text])"
+        },
+        "calculation_runs_status_check": {
+          "name": "calculation_runs_status_check",
+          "value": "status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text])"
+        },
+        "calculation_runs_stage_check": {
+          "name": "calculation_runs_stage_check",
+          "value": "stage = ANY (ARRAY['validate'::text, 'forecast'::text, 'recommend'::text, 'explain'::text])"
+        },
+        "calculation_runs_explanation_status_check": {
+          "name": "calculation_runs_explanation_status_check",
+          "value": "explanation_status = ANY (ARRAY['not_requested'::text, 'pending'::text, 'succeeded'::text, 'degraded'::text])"
+        },
+        "calculation_runs_coverage_gate_check": {
+          "name": "calculation_runs_coverage_gate_check",
+          "value": "coverage_gate = ANY (ARRAY['complete'::text, 'incomplete'::text])"
+        },
+        "calculation_runs_state_version_check": {
+          "name": "calculation_runs_state_version_check",
+          "value": "state_version >= 0"
+        },
+        "calculation_runs_review_version_check": {
+          "name": "calculation_runs_review_version_check",
+          "value": "review_version >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.category_policies": {
+      "name": "category_policies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_key": {
+          "name": "category_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_period_days": {
+          "name": "review_period_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "safety_stock": {
+          "name": "safety_stock",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parameters": {
+          "name": "parameters",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "policy_version": {
+          "name": "policy_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "category_policies_project_id_dataset_version_id_fkey": {
+          "name": "category_policies_project_id_dataset_version_id_fkey",
+          "tableFrom": "category_policies",
+          "tableTo": "dataset_versions",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "category_policies_project_id_dataset_version_id_category_ke_key": {
+          "name": "category_policies_project_id_dataset_version_id_category_ke_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "category_key",
+            "dataset_version_id",
+            "project_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "category_policies_review_period_days_check": {
+          "name": "category_policies_review_period_days_check",
+          "value": "review_period_days > 0"
+        },
+        "category_policies_safety_stock_check": {
+          "name": "category_policies_safety_stock_check",
+          "value": "safety_stock >= (0)::numeric"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.dataset_versions": {
+      "name": "dataset_versions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "import_id": {
+          "name": "import_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "manifest": {
+          "name": "manifest",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "manifest_hash": {
+          "name": "manifest_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "as_of_date": {
+          "name": "as_of_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provenance": {
+          "name": "provenance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_completeness": {
+          "name": "source_completeness",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "dataset_versions_project_id_import_id_fkey": {
+          "name": "dataset_versions_project_id_import_id_fkey",
+          "tableFrom": "dataset_versions",
+          "tableTo": "imports",
+          "columnsFrom": [
+            "project_id",
+            "import_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "dataset_versions_project_id_fkey": {
+          "name": "dataset_versions_project_id_fkey",
+          "tableFrom": "dataset_versions",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "dataset_versions_project_id_id_key": {
+          "name": "dataset_versions_project_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "project_id"
+          ]
+        },
+        "dataset_versions_project_id_import_id_id_key": {
+          "name": "dataset_versions_project_id_import_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "import_id",
+            "project_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "dataset_versions_manifest_hash_check": {
+          "name": "dataset_versions_manifest_hash_check",
+          "value": "manifest_hash ~ '^[a-f0-9]{64}$'::text"
+        },
+        "dataset_versions_provenance_check": {
+          "name": "dataset_versions_provenance_check",
+          "value": "provenance = ANY (ARRAY['partner'::text, 'synthetic'::text, 'mixed'::text])"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.dispatch_intents": {
+      "name": "dispatch_intents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operation_type": {
+          "name": "operation_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "import_id": {
+          "name": "import_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload_version": {
+          "name": "payload_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload_hash": {
+          "name": "payload_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_attempt_at": {
+          "name": "next_attempt_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_until": {
+          "name": "lease_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_task_id": {
+          "name": "external_task_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "safe_error": {
+          "name": "safe_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "dispatch_intents_project_id_import_id_fkey": {
+          "name": "dispatch_intents_project_id_import_id_fkey",
+          "tableFrom": "dispatch_intents",
+          "tableTo": "imports",
+          "columnsFrom": [
+            "project_id",
+            "import_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "dispatch_intents_project_id_run_id_fkey": {
+          "name": "dispatch_intents_project_id_run_id_fkey",
+          "tableFrom": "dispatch_intents",
+          "tableTo": "calculation_runs",
+          "columnsFrom": [
+            "project_id",
+            "run_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "dispatch_intents_project_id_idempotency_key_key": {
+          "name": "dispatch_intents_project_id_idempotency_key_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "idempotency_key",
+            "project_id",
+            "operation_type"
+          ]
+        },
+        "dispatch_intents_import_id_key": {
+          "name": "dispatch_intents_import_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "import_id"
+          ]
+        },
+        "dispatch_intents_run_id_key": {
+          "name": "dispatch_intents_run_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "run_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "dispatch_intents_operation_type_check": {
+          "name": "dispatch_intents_operation_type_check",
+          "value": "operation_type = ANY (ARRAY['import'::text, 'calculation'::text])"
+        },
+        "dispatch_intents_payload_hash_check": {
+          "name": "dispatch_intents_payload_hash_check",
+          "value": "payload_hash ~ '^[a-f0-9]{64}$'::text"
+        },
+        "dispatch_intents_status_check": {
+          "name": "dispatch_intents_status_check",
+          "value": "status = ANY (ARRAY['pending'::text, 'leased'::text, 'sent'::text, 'failed'::text])"
+        },
+        "dispatch_intents_attempts_check": {
+          "name": "dispatch_intents_attempts_check",
+          "value": "attempts >= 0"
+        },
+        "dispatch_intents_check": {
+          "name": "dispatch_intents_check",
+          "value": "((operation_type = 'import'::text) AND (import_id IS NOT NULL) AND (run_id IS NULL)) OR ((operation_type = 'calculation'::text) AND (run_id IS NOT NULL) AND (import_id IS NULL))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.export_artifacts": {
+      "name": "export_artifacts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "approval_id": {
+          "name": "approval_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_object_id": {
+          "name": "source_object_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checksum": {
+          "name": "checksum",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "format_version": {
+          "name": "format_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "export_artifacts_project_id_approval_id_fkey": {
+          "name": "export_artifacts_project_id_approval_id_fkey",
+          "tableFrom": "export_artifacts",
+          "tableTo": "approvals",
+          "columnsFrom": [
+            "project_id",
+            "approval_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "export_artifacts_project_id_source_object_id_checksum_fkey": {
+          "name": "export_artifacts_project_id_source_object_id_checksum_fkey",
+          "tableFrom": "export_artifacts",
+          "tableTo": "source_objects",
+          "columnsFrom": [
+            "project_id",
+            "source_object_id",
+            "checksum"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id",
+            "checksum"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "export_artifacts_approval_id_format_version_key": {
+          "name": "export_artifacts_approval_id_format_version_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "approval_id",
+            "format_version"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "export_artifacts_checksum_check": {
+          "name": "export_artifacts_checksum_check",
+          "value": "checksum ~ '^[a-f0-9]{64}$'::text"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.growth_assumptions": {
+      "name": "growth_assumptions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_key": {
+          "name": "category_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effective_from": {
+          "name": "effective_from",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "growth_rate": {
+          "name": "growth_rate",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provenance": {
+          "name": "provenance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "growth_assumptions_project_id_dataset_version_id_fkey": {
+          "name": "growth_assumptions_project_id_dataset_version_id_fkey",
+          "tableFrom": "growth_assumptions",
+          "tableTo": "dataset_versions",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "growth_assumptions_project_id_dataset_version_id_category_k_key": {
+          "name": "growth_assumptions_project_id_dataset_version_id_category_k_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "category_key",
+            "dataset_version_id",
+            "project_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "growth_assumptions_growth_rate_check": {
+          "name": "growth_assumptions_growth_rate_check",
+          "value": "growth_rate >= (0)::numeric"
+        },
+        "growth_assumptions_method_check": {
+          "name": "growth_assumptions_method_check",
+          "value": "method = ANY (ARRAY['provided'::text, 'estimated'::text])"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.imports": {
+      "name": "imports",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_object_id": {
+          "name": "source_object_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checksum": {
+          "name": "checksum",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "manifest": {
+          "name": "manifest",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "manifest_hash": {
+          "name": "manifest_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adapter_version": {
+          "name": "adapter_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quality_report": {
+          "name": "quality_report",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "safe_error": {
+          "name": "safe_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state_version": {
+          "name": "state_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "imports_project_id_fkey": {
+          "name": "imports_project_id_fkey",
+          "tableFrom": "imports",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "imports_project_id_source_object_id_checksum_fkey": {
+          "name": "imports_project_id_source_object_id_checksum_fkey",
+          "tableFrom": "imports",
+          "tableTo": "source_objects",
+          "columnsFrom": [
+            "project_id",
+            "source_object_id",
+            "checksum"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id",
+            "checksum"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "imports_project_id_id_key": {
+          "name": "imports_project_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "project_id"
+          ]
+        },
+        "imports_project_id_checksum_manifest_hash_adapter_version_s_key": {
+          "name": "imports_project_id_checksum_manifest_hash_adapter_version_s_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "adapter_version",
+            "checksum",
+            "manifest_hash",
+            "project_id",
+            "schema_version"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "imports_manifest_hash_check": {
+          "name": "imports_manifest_hash_check",
+          "value": "manifest_hash ~ '^[a-f0-9]{64}$'::text"
+        },
+        "imports_status_check": {
+          "name": "imports_status_check",
+          "value": "status = ANY (ARRAY['uploaded'::text, 'awaiting-validation'::text, 'validating'::text, 'needs_mapping'::text, 'invalid'::text, 'ready'::text, 'failed'::text])"
+        },
+        "imports_state_version_check": {
+          "name": "imports_state_version_check",
+          "value": "state_version >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.inbound_shipments": {
+      "name": "inbound_shipments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "warehouse_id": {
+          "name": "warehouse_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_key": {
+          "name": "source_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expected_on": {
+          "name": "expected_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_object_id": {
+          "name": "source_object_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_sheet": {
+          "name": "source_sheet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_row_number": {
+          "name": "source_row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "inbound_shipments_project_id_source_object_id_fkey": {
+          "name": "inbound_shipments_project_id_source_object_id_fkey",
+          "tableFrom": "inbound_shipments",
+          "tableTo": "source_objects",
+          "columnsFrom": [
+            "project_id",
+            "source_object_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "inbound_shipments_project_id_dataset_version_id_product_id_fkey": {
+          "name": "inbound_shipments_project_id_dataset_version_id_product_id_fkey",
+          "tableFrom": "inbound_shipments",
+          "tableTo": "products",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "inbound_shipments_project_id_dataset_version_id_warehouse__fkey": {
+          "name": "inbound_shipments_project_id_dataset_version_id_warehouse__fkey",
+          "tableFrom": "inbound_shipments",
+          "tableTo": "warehouses",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "warehouse_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "inbound_shipments_project_id_dataset_version_id_supplier_i_fkey": {
+          "name": "inbound_shipments_project_id_dataset_version_id_supplier_i_fkey",
+          "tableFrom": "inbound_shipments",
+          "tableTo": "suppliers",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "supplier_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "inbound_shipments_project_id_dataset_version_id_source_key_key": {
+          "name": "inbound_shipments_project_id_dataset_version_id_source_key_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "project_id",
+            "source_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "inbound_shipments_quantity_check": {
+          "name": "inbound_shipments_quantity_check",
+          "value": "quantity >= (0)::numeric"
+        },
+        "inbound_shipments_source_row_number_check": {
+          "name": "inbound_shipments_source_row_number_check",
+          "value": "source_row_number > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.monthly_sales": {
+      "name": "monthly_sales",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "warehouse_id": {
+          "name": "warehouse_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "period_month": {
+          "name": "period_month",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "granularity": {
+          "name": "granularity",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'month'"
+        },
+        "source_object_id": {
+          "name": "source_object_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_sheet": {
+          "name": "source_sheet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_row_number": {
+          "name": "source_row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completeness": {
+          "name": "completeness",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origin": {
+          "name": "origin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method_version": {
+          "name": "method_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "monthly_sales_project_id_source_object_id_fkey": {
+          "name": "monthly_sales_project_id_source_object_id_fkey",
+          "tableFrom": "monthly_sales",
+          "tableTo": "source_objects",
+          "columnsFrom": [
+            "project_id",
+            "source_object_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "monthly_sales_project_id_dataset_version_id_product_id_fkey": {
+          "name": "monthly_sales_project_id_dataset_version_id_product_id_fkey",
+          "tableFrom": "monthly_sales",
+          "tableTo": "products",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "monthly_sales_project_id_dataset_version_id_warehouse_id_fkey": {
+          "name": "monthly_sales_project_id_dataset_version_id_warehouse_id_fkey",
+          "tableFrom": "monthly_sales",
+          "tableTo": "warehouses",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "warehouse_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "monthly_sales_project_id_dataset_version_id_product_id_ware_key": {
+          "name": "monthly_sales_project_id_dataset_version_id_product_id_ware_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "period_month",
+            "product_id",
+            "project_id",
+            "warehouse_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "monthly_sales_granularity_check": {
+          "name": "monthly_sales_granularity_check",
+          "value": "granularity = 'month'::text"
+        },
+        "monthly_sales_source_row_number_check": {
+          "name": "monthly_sales_source_row_number_check",
+          "value": "source_row_number > 0"
+        },
+        "monthly_sales_quantity_check": {
+          "name": "monthly_sales_quantity_check",
+          "value": "quantity >= (0)::numeric"
+        },
+        "monthly_sales_completeness_check": {
+          "name": "monthly_sales_completeness_check",
+          "value": "completeness = ANY (ARRAY['complete'::text, 'explicit_none'::text, 'missing'::text, 'invalid'::text])"
+        },
+        "monthly_sales_check": {
+          "name": "monthly_sales_check",
+          "value": "((completeness = ANY (ARRAY['complete'::text, 'explicit_none'::text])) AND (quantity IS NOT NULL)) OR ((completeness = ANY (ARRAY['missing'::text, 'invalid'::text])) AND (quantity IS NULL))"
+        },
+        "monthly_sales_origin_check": {
+          "name": "monthly_sales_origin_check",
+          "value": "origin = ANY (ARRAY['partner'::text, 'synthetic'::text, 'mixed'::text])"
+        },
+        "monthly_sales_period_month_check": {
+          "name": "monthly_sales_period_month_check",
+          "value": "EXTRACT(day FROM period_month) = (1)::numeric"
+        },
+        "monthly_sales_check1": {
+          "name": "monthly_sales_check1",
+          "value": "(completeness <> 'explicit_none'::text) OR (quantity = (0)::numeric)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.product_suppliers": {
+      "name": "product_suppliers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_sku": {
+          "name": "supplier_sku",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moq": {
+          "name": "moq",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pack_multiple": {
+          "name": "pack_multiple",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "conversion": {
+          "name": "conversion",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "product_suppliers_project_id_dataset_version_id_fkey": {
+          "name": "product_suppliers_project_id_dataset_version_id_fkey",
+          "tableFrom": "product_suppliers",
+          "tableTo": "dataset_versions",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "product_suppliers_project_id_dataset_version_id_product_id_fkey": {
+          "name": "product_suppliers_project_id_dataset_version_id_product_id_fkey",
+          "tableFrom": "product_suppliers",
+          "tableTo": "products",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "product_suppliers_project_id_dataset_version_id_supplier_i_fkey": {
+          "name": "product_suppliers_project_id_dataset_version_id_supplier_i_fkey",
+          "tableFrom": "product_suppliers",
+          "tableTo": "suppliers",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "supplier_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "product_suppliers_project_id_dataset_version_id_product_id__key": {
+          "name": "product_suppliers_project_id_dataset_version_id_product_id__key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "product_id",
+            "project_id",
+            "supplier_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "product_suppliers_moq_check": {
+          "name": "product_suppliers_moq_check",
+          "value": "moq >= (0)::numeric"
+        },
+        "product_suppliers_pack_multiple_check": {
+          "name": "product_suppliers_pack_multiple_check",
+          "value": "pack_multiple > (0)::numeric"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.products": {
+      "name": "products",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_key": {
+          "name": "source_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sku": {
+          "name": "sku",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_key": {
+          "name": "category_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversions": {
+          "name": "conversions",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "products_project_id_dataset_version_id_fkey": {
+          "name": "products_project_id_dataset_version_id_fkey",
+          "tableFrom": "products",
+          "tableTo": "dataset_versions",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "products_project_id_dataset_version_id_id_key": {
+          "name": "products_project_id_dataset_version_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "id",
+            "project_id"
+          ]
+        },
+        "products_project_id_dataset_version_id_source_key_key": {
+          "name": "products_project_id_dataset_version_id_source_key_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "project_id",
+            "source_key"
+          ]
+        },
+        "products_project_id_dataset_version_id_sku_key": {
+          "name": "products_project_id_dataset_version_id_sku_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "project_id",
+            "sku"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.projects": {
+      "name": "projects",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "projects_id_owner_user_id_key": {
+          "name": "projects_id_owner_user_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "owner_user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "projects_owner_user_id_check": {
+          "name": "projects_owner_user_id_check",
+          "value": "length(owner_user_id) > 0"
+        },
+        "projects_name_check": {
+          "name": "projects_name_check",
+          "value": "length(TRIM(BOTH FROM name)) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.recommendation_reviews": {
+      "name": "recommendation_reviews",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recommendation_id": {
+          "name": "recommendation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review_version": {
+          "name": "review_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewed_quantity": {
+          "name": "reviewed_quantity",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_user_id": {
+          "name": "author_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "recommendation_reviews_project_id_run_id_fkey": {
+          "name": "recommendation_reviews_project_id_run_id_fkey",
+          "tableFrom": "recommendation_reviews",
+          "tableTo": "calculation_runs",
+          "columnsFrom": [
+            "project_id",
+            "run_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "recommendation_reviews_project_id_run_id_recommendation_id_fkey": {
+          "name": "recommendation_reviews_project_id_run_id_recommendation_id_fkey",
+          "tableFrom": "recommendation_reviews",
+          "tableTo": "recommendations",
+          "columnsFrom": [
+            "project_id",
+            "run_id",
+            "recommendation_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "run_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "recommendation_reviews_recommendation_id_review_version_key": {
+          "name": "recommendation_reviews_recommendation_id_review_version_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "recommendation_id",
+            "review_version"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "recommendation_reviews_review_version_check": {
+          "name": "recommendation_reviews_review_version_check",
+          "value": "review_version > 0"
+        },
+        "recommendation_reviews_reviewed_quantity_check": {
+          "name": "recommendation_reviews_reviewed_quantity_check",
+          "value": "reviewed_quantity >= (0)::numeric"
+        },
+        "recommendation_reviews_reason_check": {
+          "name": "recommendation_reviews_reason_check",
+          "value": "length(TRIM(BOTH FROM reason)) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.recommendations": {
+      "name": "recommendations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "warehouse_id": {
+          "name": "warehouse_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "calculation_version": {
+          "name": "calculation_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_article": {
+          "name": "supplier_article",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "projected_stockout_date": {
+          "name": "projected_stockout_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shortage_days": {
+          "name": "shortage_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recommended_quantity": {
+          "name": "recommended_quantity",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quantity_status": {
+          "name": "quantity_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "urgency": {
+          "name": "urgency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numeric_factors": {
+          "name": "numeric_factors",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data_quality": {
+          "name": "data_quality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rationale": {
+          "name": "rationale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "recommendations_project_id_dataset_version_id_run_id_fkey": {
+          "name": "recommendations_project_id_dataset_version_id_run_id_fkey",
+          "tableFrom": "recommendations",
+          "tableTo": "calculation_runs",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "run_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "recommendations_project_id_dataset_version_id_product_id_fkey": {
+          "name": "recommendations_project_id_dataset_version_id_product_id_fkey",
+          "tableFrom": "recommendations",
+          "tableTo": "products",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "recommendations_project_id_dataset_version_id_warehouse_id_fkey": {
+          "name": "recommendations_project_id_dataset_version_id_warehouse_id_fkey",
+          "tableFrom": "recommendations",
+          "tableTo": "warehouses",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "warehouse_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "recommendations_project_id_dataset_version_id_supplier_id_fkey": {
+          "name": "recommendations_project_id_dataset_version_id_supplier_id_fkey",
+          "tableFrom": "recommendations",
+          "tableTo": "suppliers",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "supplier_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "recommendations_project_id_dataset_version_id_product_id_s_fkey": {
+          "name": "recommendations_project_id_dataset_version_id_product_id_s_fkey",
+          "tableFrom": "recommendations",
+          "tableTo": "product_suppliers",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "product_id",
+            "supplier_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "product_id",
+            "supplier_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "recommendations_project_id_run_id_id_key": {
+          "name": "recommendations_project_id_run_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "project_id",
+            "run_id"
+          ]
+        },
+        "recommendations_run_id_product_id_warehouse_id_supplier_id_key": {
+          "name": "recommendations_run_id_product_id_warehouse_id_supplier_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "product_id",
+            "run_id",
+            "supplier_id",
+            "warehouse_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "recommendations_shortage_days_check": {
+          "name": "recommendations_shortage_days_check",
+          "value": "shortage_days >= 0"
+        },
+        "recommendations_recommended_quantity_check": {
+          "name": "recommendations_recommended_quantity_check",
+          "value": "recommended_quantity >= (0)::numeric"
+        },
+        "recommendations_quantity_status_check": {
+          "name": "recommendations_quantity_status_check",
+          "value": "quantity_status = ANY (ARRAY['known'::text, 'unavailable'::text])"
+        },
+        "recommendations_urgency_check": {
+          "name": "recommendations_urgency_check",
+          "value": "urgency = ANY (ARRAY['unknown'::text, 'urgent'::text, 'planned'::text, 'none'::text])"
+        },
+        "recommendations_data_quality_check": {
+          "name": "recommendations_data_quality_check",
+          "value": "data_quality IN ('complete','limited','unavailable')"
+        },
+        "recommendations_check": {
+          "name": "recommendations_check",
+          "value": "((quantity_status = 'known'::text) AND (recommended_quantity IS NOT NULL) AND (data_quality <> 'unavailable'::text) AND (urgency <> 'unknown'::text)) OR ((quantity_status = 'unavailable'::text) AND (recommended_quantity IS NULL) AND (data_quality = 'unavailable'::text))"
+        },
+        "recommendations_numeric_factors_check": {
+          "name": "recommendations_numeric_factors_check",
+          "value": "jsonb_typeof(numeric_factors) = 'array'::text"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.run_events": {
+      "name": "run_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sequence_no": {
+          "name": "sequence_no",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "safe_payload": {
+          "name": "safe_payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "run_events_project_id_run_id_fkey": {
+          "name": "run_events_project_id_run_id_fkey",
+          "tableFrom": "run_events",
+          "tableTo": "calculation_runs",
+          "columnsFrom": [
+            "project_id",
+            "run_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "run_events_run_id_sequence_no_key": {
+          "name": "run_events_run_id_sequence_no_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "run_id",
+            "sequence_no"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "run_events_sequence_no_check": {
+          "name": "run_events_sequence_no_check",
+          "value": "sequence_no > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sales": {
+      "name": "sales",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "warehouse_id": {
+          "name": "warehouse_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sold_on": {
+          "name": "sold_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_object_id": {
+          "name": "source_object_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_sheet": {
+          "name": "source_sheet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_row_number": {
+          "name": "source_row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operation_type": {
+          "name": "operation_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_event_id": {
+          "name": "source_event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_price": {
+          "name": "unit_price",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "anonymous_customer_key": {
+          "name": "anonymous_customer_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_key_available": {
+          "name": "customer_key_available",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "sales_project_id_source_object_id_fkey": {
+          "name": "sales_project_id_source_object_id_fkey",
+          "tableFrom": "sales",
+          "tableTo": "source_objects",
+          "columnsFrom": [
+            "project_id",
+            "source_object_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "sales_project_id_dataset_version_id_product_id_fkey": {
+          "name": "sales_project_id_dataset_version_id_product_id_fkey",
+          "tableFrom": "sales",
+          "tableTo": "products",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "sales_project_id_dataset_version_id_warehouse_id_fkey": {
+          "name": "sales_project_id_dataset_version_id_warehouse_id_fkey",
+          "tableFrom": "sales",
+          "tableTo": "warehouses",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "warehouse_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sales_project_id_dataset_version_id_source_event_id_key": {
+          "name": "sales_project_id_dataset_version_id_source_event_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "project_id",
+            "source_event_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "sales_source_row_number_check": {
+          "name": "sales_source_row_number_check",
+          "value": "source_row_number > 0"
+        },
+        "sales_operation_type_check": {
+          "name": "sales_operation_type_check",
+          "value": "operation_type = ANY (ARRAY['sale'::text, 'return'::text, 'correction'::text])"
+        },
+        "sales_unit_price_check": {
+          "name": "sales_unit_price_check",
+          "value": "unit_price >= (0)::numeric"
+        },
+        "sales_check": {
+          "name": "sales_check",
+          "value": "(customer_key_available AND (anonymous_customer_key IS NOT NULL)) OR ((NOT customer_key_available) AND (anonymous_customer_key IS NULL))"
+        },
+        "sales_check1": {
+          "name": "sales_check1",
+          "value": "(operation_type <> 'sale'::text) OR (quantity >= (0)::numeric)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.schema_migrations": {
+      "name": "schema_migrations",
+      "schema": "",
+      "columns": {
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "checksum": {
+          "name": "checksum",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "applied_at": {
+          "name": "applied_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.seasonality_indices": {
+      "name": "seasonality_indices",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category_key": {
+          "name": "category_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "period_month": {
+          "name": "period_month",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "index_value": {
+          "name": "index_value",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method_version": {
+          "name": "method_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completeness": {
+          "name": "completeness",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "seasonality_indices_project_id_dataset_version_id_product__fkey": {
+          "name": "seasonality_indices_project_id_dataset_version_id_product__fkey",
+          "tableFrom": "seasonality_indices",
+          "tableTo": "products",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "seasonality_indices_project_id_dataset_version_id_product_i_key": {
+          "name": "seasonality_indices_project_id_dataset_version_id_product_i_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "method_version",
+            "period_month",
+            "product_id",
+            "project_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "seasonality_indices_period_month_check": {
+          "name": "seasonality_indices_period_month_check",
+          "value": "(period_month >= 1) AND (period_month <= 12)"
+        },
+        "seasonality_indices_index_value_check": {
+          "name": "seasonality_indices_index_value_check",
+          "value": "index_value >= (0)::numeric"
+        },
+        "seasonality_indices_method_check": {
+          "name": "seasonality_indices_method_check",
+          "value": "method = ANY (ARRAY['provided'::text, 'estimated'::text])"
+        },
+        "seasonality_indices_check": {
+          "name": "seasonality_indices_check",
+          "value": "(product_id IS NULL) <> (category_key IS NULL)"
+        },
+        "seasonality_indices_completeness_check": {
+          "name": "seasonality_indices_completeness_check",
+          "value": "completeness = ANY (ARRAY['complete'::text, 'explicit_none'::text, 'missing'::text, 'invalid'::text])"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.source_objects": {
+      "name": "source_objects",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_key": {
+          "name": "object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checksum": {
+          "name": "checksum",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "byte_size": {
+          "name": "byte_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_type": {
+          "name": "content_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purpose": {
+          "name": "purpose",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "source_objects_project_id_fkey": {
+          "name": "source_objects_project_id_fkey",
+          "tableFrom": "source_objects",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "source_objects_object_key_key": {
+          "name": "source_objects_object_key_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "object_key"
+          ]
+        },
+        "source_objects_project_id_id_key": {
+          "name": "source_objects_project_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "project_id"
+          ]
+        },
+        "source_objects_project_id_id_checksum_key": {
+          "name": "source_objects_project_id_id_checksum_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "checksum",
+            "id",
+            "project_id"
+          ]
+        },
+        "source_objects_project_id_checksum_key": {
+          "name": "source_objects_project_id_checksum_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "checksum",
+            "project_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "source_objects_checksum_check": {
+          "name": "source_objects_checksum_check",
+          "value": "checksum ~ '^[a-f0-9]{64}$'::text"
+        },
+        "source_objects_byte_size_check": {
+          "name": "source_objects_byte_size_check",
+          "value": "(byte_size >= 1) AND (byte_size <= 26214400)"
+        },
+        "source_objects_purpose_check": {
+          "name": "source_objects_purpose_check",
+          "value": "purpose = ANY (ARRAY['source'::text, 'report'::text, 'export'::text])"
+        },
+        "source_objects_check": {
+          "name": "source_objects_check",
+          "value": "object_key = ((((('projects/'::text || (project_id)::text) || '/'::text) || purpose) || 's/'::text) || (id)::text)"
+        },
+        "source_objects_check1": {
+          "name": "source_objects_check1",
+          "value": "((purpose = 'source'::text) AND (content_type = ANY (ARRAY['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'::text, 'text/csv'::text, 'application/zip'::text]))) OR ((purpose = 'report'::text) AND (content_type = ANY (ARRAY['application/json'::text, 'text/csv'::text]))) OR ((purpose = 'export'::text) AND (content_type = 'text/csv'::text))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.stock_snapshots": {
+      "name": "stock_snapshots",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "warehouse_id": {
+          "name": "warehouse_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "as_of_date": {
+          "name": "as_of_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_object_id": {
+          "name": "source_object_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_sheet": {
+          "name": "source_sheet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_row_number": {
+          "name": "source_row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "numeric(30, 8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "stock_snapshots_project_id_source_object_id_fkey": {
+          "name": "stock_snapshots_project_id_source_object_id_fkey",
+          "tableFrom": "stock_snapshots",
+          "tableTo": "source_objects",
+          "columnsFrom": [
+            "project_id",
+            "source_object_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "stock_snapshots_project_id_dataset_version_id_product_id_fkey": {
+          "name": "stock_snapshots_project_id_dataset_version_id_product_id_fkey",
+          "tableFrom": "stock_snapshots",
+          "tableTo": "products",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "stock_snapshots_project_id_dataset_version_id_warehouse_id_fkey": {
+          "name": "stock_snapshots_project_id_dataset_version_id_warehouse_id_fkey",
+          "tableFrom": "stock_snapshots",
+          "tableTo": "warehouses",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "warehouse_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "stock_snapshots_project_id_dataset_version_id_product_id_wa_key": {
+          "name": "stock_snapshots_project_id_dataset_version_id_product_id_wa_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "as_of_date",
+            "dataset_version_id",
+            "product_id",
+            "project_id",
+            "warehouse_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "stock_snapshots_source_row_number_check": {
+          "name": "stock_snapshots_source_row_number_check",
+          "value": "source_row_number > 0"
+        },
+        "stock_snapshots_quantity_check": {
+          "name": "stock_snapshots_quantity_check",
+          "value": "quantity >= (0)::numeric"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.stockout_intervals": {
+      "name": "stockout_intervals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "warehouse_id": {
+          "name": "warehouse_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "starts_on": {
+          "name": "starts_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ends_on": {
+          "name": "ends_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_object_id": {
+          "name": "source_object_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_sheet": {
+          "name": "source_sheet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_row_number": {
+          "name": "source_row_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "stockout_intervals_project_id_source_object_id_fkey": {
+          "name": "stockout_intervals_project_id_source_object_id_fkey",
+          "tableFrom": "stockout_intervals",
+          "tableTo": "source_objects",
+          "columnsFrom": [
+            "project_id",
+            "source_object_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "stockout_intervals_project_id_dataset_version_id_product_i_fkey": {
+          "name": "stockout_intervals_project_id_dataset_version_id_product_i_fkey",
+          "tableFrom": "stockout_intervals",
+          "tableTo": "products",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "stockout_intervals_project_id_dataset_version_id_warehouse_fkey": {
+          "name": "stockout_intervals_project_id_dataset_version_id_warehouse_fkey",
+          "tableFrom": "stockout_intervals",
+          "tableTo": "warehouses",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "warehouse_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "stockout_intervals_check": {
+          "name": "stockout_intervals_check",
+          "value": "ends_on >= starts_on"
+        },
+        "stockout_intervals_status_check": {
+          "name": "stockout_intervals_status_check",
+          "value": "status = ANY (ARRAY['observed'::text, 'estimated'::text])"
+        },
+        "stockout_intervals_source_row_number_check": {
+          "name": "stockout_intervals_source_row_number_check",
+          "value": "source_row_number > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.supplier_lead_times": {
+      "name": "supplier_lead_times",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category_key": {
+          "name": "category_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "days": {
+          "name": "days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provenance": {
+          "name": "provenance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "supplier_lead_times_project_id_dataset_version_id_product__fkey": {
+          "name": "supplier_lead_times_project_id_dataset_version_id_product__fkey",
+          "tableFrom": "supplier_lead_times",
+          "tableTo": "products",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "supplier_lead_times_project_id_dataset_version_id_supplier_fkey": {
+          "name": "supplier_lead_times_project_id_dataset_version_id_supplier_fkey",
+          "tableFrom": "supplier_lead_times",
+          "tableTo": "suppliers",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id",
+            "supplier_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "dataset_version_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "supplier_lead_times_project_id_dataset_version_id_supplier__key": {
+          "name": "supplier_lead_times_project_id_dataset_version_id_supplier__key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "category_key",
+            "dataset_version_id",
+            "project_id",
+            "supplier_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "supplier_lead_times_days_check": {
+          "name": "supplier_lead_times_days_check",
+          "value": "days >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.suppliers": {
+      "name": "suppliers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_key": {
+          "name": "source_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "suppliers_project_id_dataset_version_id_fkey": {
+          "name": "suppliers_project_id_dataset_version_id_fkey",
+          "tableFrom": "suppliers",
+          "tableTo": "dataset_versions",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "suppliers_project_id_dataset_version_id_id_key": {
+          "name": "suppliers_project_id_dataset_version_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "id",
+            "project_id"
+          ]
+        },
+        "suppliers_project_id_dataset_version_id_source_key_key": {
+          "name": "suppliers_project_id_dataset_version_id_source_key_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "project_id",
+            "source_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.warehouses": {
+      "name": "warehouses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dataset_version_id": {
+          "name": "dataset_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_key": {
+          "name": "source_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "warehouses_project_id_dataset_version_id_fkey": {
+          "name": "warehouses_project_id_dataset_version_id_fkey",
+          "tableFrom": "warehouses",
+          "tableTo": "dataset_versions",
+          "columnsFrom": [
+            "project_id",
+            "dataset_version_id"
+          ],
+          "columnsTo": [
+            "project_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "warehouses_project_id_dataset_version_id_id_key": {
+          "name": "warehouses_project_id_dataset_version_id_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "id",
+            "project_id"
+          ]
+        },
+        "warehouses_project_id_dataset_version_id_source_key_key": {
+          "name": "warehouses_project_id_dataset_version_id_source_key_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "dataset_version_id",
+            "project_id",
+            "source_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
