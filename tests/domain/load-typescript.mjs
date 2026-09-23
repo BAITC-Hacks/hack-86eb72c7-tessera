@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { registerHooks } from "node:module";
+import { fileURLToPath } from "node:url";
 
 // Разрешение расширений Next.js ограничено чистым ядром и его DTO.
 const roots = [
