@@ -43,7 +43,7 @@ export function RecommendationTable({ rows, drafts, saved, checkedSuppliers, deg
   return (
     <section aria-labelledby="recommendations-heading" className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><h2 id="recommendations-heading" className="text-base font-semibold">Рекомендации по поставщикам</h2><p className="mt-1 text-sm text-muted-foreground">Демо · числовые рекомендации неизменяемы, проверенное количество редактируется отдельно.</p></div>
+        <h2 id="recommendations-heading" className="text-base font-semibold">Рекомендации по поставщикам</h2>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <label className="min-w-0 flex-1 text-xs sm:w-56">Поиск по артикулу и названию
             <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} className={`${inputClass} mt-1 w-full`} />

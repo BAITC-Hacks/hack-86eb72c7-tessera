@@ -85,28 +85,28 @@ export const scenarios: { id: ScenarioId; label: string }[] = [
 ];
 
 const sources: Source[] = [
-  { id: "sales", label: "История продаж", status: "ready", detail: "Синтетическая история за 2024–2026 годы", required: true },
+  { id: "sales", label: "История продаж", status: "ready", detail: "История за 2024–2026 годы", required: true },
   { id: "stock", label: "Остатки", status: "ready", detail: "Срез на 20.09.2026", required: true },
   { id: "transit", label: "Товары в пути", status: "ready", detail: "Два известных поступления; по одной позиции значение отсутствует", required: true },
   { id: "catalog", label: "Товары и категории", status: "ready", detail: "Сопоставлены 6 артикулов", required: true },
-  { id: "suppliers", label: "Поставщики и сроки", status: "ready", detail: "Сроки из демонстрационного справочника", required: true },
+  { id: "suppliers", label: "Поставщики и сроки", status: "ready", detail: "Сроки поставки указаны", required: true },
   { id: "stockout", label: "Отсутствие товара", status: "review", detail: "История по одной позиции не подтверждена; резервное допущение указано в строке", required: false, affectedRows: 1, recovery: "Проверить интервалы отсутствия при реальном импорте" },
   { id: "growth", label: "Прогноз прироста", status: "ready", detail: "Предложенное допущение: план категории", required: false },
-  { id: "bill", label: "Материальная ведомость 1С и сопоставление", status: "review", detail: "Демонстрационное сопоставление; формат выгрузки 1С не подтверждён", required: false, affectedRows: 2, recovery: "Сверить схему с владельцем 1С" },
+  { id: "bill", label: "Материальная ведомость 1С и сопоставление", status: "review", detail: "Сопоставление требует проверки; формат выгрузки 1С не подтверждён", required: false, affectedRows: 2, recovery: "Сверить схему с владельцем 1С" },
 ];
 
 const mainDataset: Dataset = {
-  id: "dataset-main-v2", name: "Учебный складской срез", version: "v2", asOfDate: "2026-09-20",
+  id: "dataset-main-v2", name: "Складской срез", version: "v2", asOfDate: "2026-09-20",
   period: "01.01.2024 — 20.09.2026",
   warehouses: [{ id: "almaty", label: "Алматы" }, { id: "astana", label: "Астана" }],
   categories: ["Кабель", "Автоматика"], coverage: "45 дней (предложенное допущение)",
-  growth: "План категории, источник: демонстрационный сценарий",
+  growth: "План категории (допущение)",
   sources,
   warnings: ["По одному артикулу история отсутствия товара неизвестна.", "Формат 1С и сопоставление требуют подтверждения."],
 };
 
 const secondaryDataset: Dataset = {
-  ...mainDataset, id: "dataset-east-v1", name: "Учебный срез Восток", version: "v1",
+  ...mainDataset, id: "dataset-east-v1", name: "Срез Восток", version: "v1",
   asOfDate: "2026-09-18", period: "01.01.2025 — 18.09.2026",
   sources: sources.map((source) => source.id === "stock" ? { ...source, detail: "Срез на 18.09.2026" } : { ...source }),
 };
@@ -131,31 +131,31 @@ function factsFor(id: string, unit: string): Fact[] {
     { label: "Горизонт и срок поставки", value: "45 + 12 дней", note: `Целевая потребность: ${item.target} ${unit}` },
     { label: "Остаток", value: `${item.stock} ${unit}` },
     { label: "В пути", value: item.transit === null ? null : `${item.transit} ${unit}`, note: item.transit === null ? "Факт неизвестен; условный расчёт использует явно заявленное допущение 0" : "Поступление в горизонте" },
-    { label: "Итоговая рекомендация", value: `${item.result} ${unit}`, note: `Детерминированный результат по демонстрационным фактам; шаг ${item.step} ${unit}` },
+    { label: "Итоговая рекомендация", value: `${item.result} ${unit}`, note: `Шаг заказа: ${item.step} ${unit}` },
   ];
 }
 
 export const demoRecommendations: Recommendation[] = [
-  { id: "r-001", supplierId: "volta", supplier: "Вольта-Снаб", sku: "000174", name: "Автоматический выключатель 16 А", warehouseId: "almaty", category: "Автоматика", unit: "шт.", recommended: "18", step: "1", urgency: "Срочно", summary: "Сезонность, тренд и 3 дня отсутствия товара", facts: factsFor("r-001", "шт."), warnings: [] },
-  { id: "r-002", supplierId: "volta", supplier: "Вольта-Снаб", sku: "000208", name: "Контактор модульный 25 А", warehouseId: "almaty", category: "Автоматика", unit: "шт.", recommended: "12", step: "1", urgency: "Планово", summary: "Стабильный спрос и подтверждённый объём в пути", facts: factsFor("r-002", "шт."), warnings: [] },
-  { id: "r-003", supplierId: "volta", supplier: "Вольта-Снаб", sku: "000311", name: "Реле промежуточное", warehouseId: "almaty", category: "Автоматика", unit: "шт.", recommended: "0", step: "1", urgency: "Не требуется", summary: "Остаток покрывает целевую потребность", facts: factsFor("r-003", "шт."), warnings: [] },
-  { id: "r-004", supplierId: "cable", supplier: "КабельПром", sku: "000047", name: "Кабель силовой ВВГнг 3×2,5", warehouseId: "almaty", category: "Кабель", unit: "м", recommended: "125.5", step: "0.5", urgency: "Срочно", summary: "Рост спроса и исключён разовый объём", facts: factsFor("r-004", "м"), warnings: [] },
-  { id: "r-005", supplierId: "cable", supplier: "КабельПром", sku: "000052", name: "Провод монтажный ПВ-3", warehouseId: "almaty", category: "Кабель", unit: "м", recommended: "42", step: "1", urgency: "Планово", summary: "Условный расчёт: объём в пути неизвестен", facts: factsFor("r-005", "м"), warnings: ["Объём в пути не подтверждён; число условное при явно указанном допущении."] },
-  { id: "r-006", supplierId: "cable", supplier: "КабельПром", sku: "000061", name: "Кабель контрольный КВВГ", warehouseId: "almaty", category: "Кабель", unit: "м", recommended: "16", step: "1", urgency: "Планово", summary: "Условный расчёт без истории отсутствия товара", facts: factsFor("r-006", "м"), warnings: ["История отсутствия товара не загружена; расчёт условный."] },
+  { id: "r-001", supplierId: "volta", supplier: "Поставщик А", sku: "000174", name: "Автоматический выключатель 16 А", warehouseId: "almaty", category: "Автоматика", unit: "шт.", recommended: "18", step: "1", urgency: "Срочно", summary: "Сезонность, тренд и 3 дня отсутствия товара", facts: factsFor("r-001", "шт."), warnings: [] },
+  { id: "r-002", supplierId: "volta", supplier: "Поставщик А", sku: "000208", name: "Контактор модульный 25 А", warehouseId: "almaty", category: "Автоматика", unit: "шт.", recommended: "12", step: "1", urgency: "Планово", summary: "Стабильный спрос и подтверждённый объём в пути", facts: factsFor("r-002", "шт."), warnings: [] },
+  { id: "r-003", supplierId: "volta", supplier: "Поставщик А", sku: "000311", name: "Реле промежуточное", warehouseId: "almaty", category: "Автоматика", unit: "шт.", recommended: "0", step: "1", urgency: "Не требуется", summary: "Остаток покрывает целевую потребность", facts: factsFor("r-003", "шт."), warnings: [] },
+  { id: "r-004", supplierId: "cable", supplier: "Поставщик Б", sku: "000047", name: "Кабель силовой ВВГнг 3×2,5", warehouseId: "almaty", category: "Кабель", unit: "м", recommended: "125.5", step: "0.5", urgency: "Срочно", summary: "Рост спроса и исключён разовый объём", facts: factsFor("r-004", "м"), warnings: [] },
+  { id: "r-005", supplierId: "cable", supplier: "Поставщик Б", sku: "000052", name: "Провод монтажный ПВ-3", warehouseId: "almaty", category: "Кабель", unit: "м", recommended: "42", step: "1", urgency: "Планово", summary: "Условный расчёт: объём в пути неизвестен", facts: factsFor("r-005", "м"), warnings: ["Объём в пути не подтверждён; число условное при явно указанном допущении."] },
+  { id: "r-006", supplierId: "cable", supplier: "Поставщик Б", sku: "000061", name: "Кабель контрольный КВВГ", warehouseId: "almaty", category: "Кабель", unit: "м", recommended: "16", step: "1", urgency: "Планово", summary: "Условный расчёт без истории отсутствия товара", facts: factsFor("r-006", "м"), warnings: ["История отсутствия товара не загружена; расчёт условный."] },
 ];
 
 const successStages: DemoRun["stageStates"] = { validate: "succeeded", forecast: "succeeded", recommend: "succeeded", explain: "succeeded" };
 
 export const initialProjects: DemoProject[] = [
   {
-    id: "demo-almaty", name: "Учебные закупки · Алматы", dataset: mainDataset,
+    id: "demo-almaty", name: "Закупки · Алматы", dataset: mainDataset,
     runs: [
       { id: "run-a1", label: "Расчёт от 20.09.2026", datasetId: mainDataset.id, scope: { warehouseId: "almaty", category: "all", asOfDate: mainDataset.asOfDate }, status: "succeeded", stage: "explain", stageStates: successStages, explanation: "succeeded", updatedAt: "2026-09-20T10:30:00+05:00" },
       { id: "run-a0", label: "Предыдущий расчёт", datasetId: mainDataset.id, scope: { warehouseId: "almaty", category: "Кабель", asOfDate: "2026-09-10" }, status: "failed", stage: "forecast", stageStates: { validate: "succeeded", forecast: "failed", recommend: "pending", explain: "pending" }, explanation: "not_requested", updatedAt: "2026-09-10T11:00:00+05:00" },
     ], recommendations: demoRecommendations,
   },
   {
-    id: "demo-astana", name: "Учебные закупки · Астана", dataset: secondaryDataset,
+    id: "demo-astana", name: "Закупки · Астана", dataset: secondaryDataset,
     runs: [
       { id: "run-b1", label: "Расчёт от 18.09.2026", datasetId: secondaryDataset.id, scope: { warehouseId: "astana", category: "all", asOfDate: secondaryDataset.asOfDate }, status: "succeeded", stage: "explain", stageStates: successStages, explanation: "succeeded", updatedAt: "2026-09-18T09:10:00+05:00" },
     ], recommendations: demoRecommendations.slice(0, 3).map((row) => ({ ...row, id: `east-${row.id}`, warehouseId: "astana" })),
@@ -164,8 +164,8 @@ export const initialProjects: DemoProject[] = [
 
 export function sourcesForScenario(dataset: Dataset | null, scenario: ScenarioId): Source[] {
   if (!dataset || scenario === "no-dataset") return [];
-  if (scenario === "importing") return dataset.sources.map((source) => source.id === "sales" ? { ...source, status: "checking", detail: "Проверка демонстрационного источника" } : source);
-  if (scenario === "invalid") return dataset.sources.map((source) => source.id === "sales" ? { ...source, status: "review", detail: "Не сопоставлена колонка количества", affectedRows: 12, recovery: "Исправить сопоставление и повторить импорт (демо)" } : source);
+  if (scenario === "importing") return dataset.sources.map((source) => source.id === "sales" ? { ...source, status: "checking", detail: "Проверка источника" } : source);
+  if (scenario === "invalid") return dataset.sources.map((source) => source.id === "sales" ? { ...source, status: "review", detail: "Не сопоставлена колонка количества", affectedRows: 12, recovery: "Исправить сопоставление и повторить проверку" } : source);
   return dataset.sources;
 }
 

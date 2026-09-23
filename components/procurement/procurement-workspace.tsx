@@ -59,7 +59,7 @@ export function ProcurementWorkspace() {
   const dataset = scenario === "no-dataset" ? null : project.dataset;
   const selectedRun = project.runs.find((run) => run.id === runId) ?? null;
   const activeRun = selectedRun ?? (dataset && scope && !["ready", "no-dataset", "importing", "invalid"].includes(scenario) ? {
-    id: "scenario-run", label: "Сценарий демо", datasetId: dataset.id, scope,
+    id: "scenario-run", label: "Новый расчёт", datasetId: dataset.id, scope,
     status: "succeeded" as const, stage: "explain" as const, stageStates: finishedStages,
     explanation: "succeeded" as const, updatedAt: "2026-09-20T10:30:00+05:00",
   } : null);
@@ -201,13 +201,13 @@ export function ProcurementWorkspace() {
   return (
     <div lang="ru" className="flex min-h-screen min-w-0 flex-col bg-background text-foreground">
       <EditorNavbar isSidebarOpen={sidebarOpen} onToggleSidebar={() => sidebarOpen ? closeSidebar() : setSidebarOpen(true)} sidebarId={SIDEBAR_ID} toggleButtonRef={toggleRef} openLabel="Открыть панель рабочих областей" closeLabel="Закрыть панель рабочих областей" />
-      <ProjectSidebar id={SIDEBAR_ID} isOpen={sidebarOpen} onClose={closeSidebar} title="Рабочие области" closeLabel="Закрыть панель рабочих областей" footer={<Button type="button" className="w-full" onClick={() => setCreateOpen(true)}><Plus aria-hidden="true" />Создать рабочую область (демо)</Button>}>
+      <ProjectSidebar id={SIDEBAR_ID} isOpen={sidebarOpen} onClose={closeSidebar} title="Рабочие области" closeLabel="Закрыть панель рабочих областей" footer={<Button type="button" className="w-full" onClick={() => setCreateOpen(true)}><Plus aria-hidden="true" />Создать рабочую область</Button>}>
         <ProjectSelection projects={projects} selectedProjectId={projectId} selectedRunId={runId} onSelectProject={switchProject} onSelectRun={switchRun} onCreate={createProject} createOpen={createOpen} onCreateOpenChange={setCreateOpen} />
       </ProjectSidebar>
       <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 space-y-5 px-4 py-5 sm:px-6 sm:py-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div><p className="text-xs font-medium text-muted-foreground">Демо · синтетические данные</p><h1 className="mt-1 text-2xl font-semibold">Рабочее место закупок</h1><p className="mt-1 text-sm text-muted-foreground">{project.name} · {dataset?.name ?? "без набора данных"}</p></div>
-          <label className="w-full text-xs font-medium sm:w-64">Сценарий демо
+          <div><p className="text-xs font-medium text-muted-foreground">Демо</p><h1 className="mt-1 text-2xl font-semibold">Рабочее место закупок</h1><p className="mt-1 text-sm text-muted-foreground">{project.name} · {dataset?.name ?? "без набора данных"}</p></div>
+          <label className="w-full text-xs font-medium sm:w-64">Сценарий
             <select value={scenario} onChange={(event) => selectScenario(event.target.value as ScenarioId)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
               {scenarios.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
             </select>
@@ -217,15 +217,15 @@ export function ProcurementWorkspace() {
         <CalculationControls dataset={dataset} scope={scope} ready={ready} running={scenario === "running"} onScopeChange={(next) => { setScope(next); setApproved(null); setCheckedSuppliers(new Set()); }} onCalculate={startCalculation} />
         <AgentProgress scenario={scenario} run={activeRun} stale={stale} onRetry={startCalculation} />
         {hasResult && activeRun && <p className="text-sm text-muted-foreground">Область показанного результата: склад {dataset?.warehouses.find((warehouse) => warehouse.id === activeRun.scope.warehouseId)?.label ?? activeRun.scope.warehouseId}, {activeRun.scope.category === "all" ? "все категории" : activeRun.scope.category}, дата расчёта {activeRun.scope.asOfDate}, набор {dataset?.version}. Изменение полей выше не меняет этот результат.</p>}
-        {hasResult && scenario === "no-need" && <div className="rounded-lg border border-border bg-card p-5 text-sm"><h2 className="font-semibold">Пополнение не требуется</h2><p className="mt-1 text-muted-foreground">По демонстрационному сценарию положительных строк заказа нет. Утверждение недоступно.</p></div>}
+        {hasResult && scenario === "no-need" && <div className="rounded-lg border border-border bg-card p-5 text-sm"><h2 className="font-semibold">Пополнение не требуется</h2><p className="mt-1 text-muted-foreground">Положительных строк заказа нет. Утверждение недоступно.</p></div>}
         {hasResult && rows.length > 0 && <RecommendationTable key={projectId} rows={rows} drafts={drafts} saved={saved} checkedSuppliers={checkedSuppliers} degraded={scenario === "degraded"} approved={Boolean(approved)} onDraftChange={updateDraft} onSave={saveEdit} onReset={resetEdit} onCheck={(id, checked) => setCheckedSuppliers((current) => { const next = new Set(current); if (checked) next.add(id); else next.delete(id); return next; })} />}
         {hasResult && rows.length === 0 && scenario !== "no-need" && <p className="rounded-lg border border-border bg-card p-5 text-sm">Для выбранной области рекомендаций нет. Выберите другой склад или категорию.</p>}
         {hasResult && <section aria-labelledby="review-heading" className="rounded-lg border border-border bg-card p-4 sm:p-5">
           <h2 id="review-heading" className="text-base font-semibold">Проверка заказа</h2>
           {blockers.length > 0 && <div className="mt-2 text-sm" role="status"><p className="font-medium">Пока нельзя утвердить:</p><ul className="mt-1 list-inside list-disc text-muted-foreground">{[...new Set(blockers)].map((reason) => <li key={reason}>{reason}</li>)}</ul></div>}
-          {approved && <p role="status" className="mt-2 text-sm">Локальный снимок утверждён в демо. Заказ не сохранён и не отправлен.</p>}
+          {approved && <p role="status" className="mt-2 text-sm">Подтверждено для предпросмотра.</p>}
           <div className="mt-4 flex flex-wrap gap-2">
-            {!approved ? <Button type="button" disabled={blockers.length > 0} onClick={() => setDialogMode("approve")}>Утвердить (демо)</Button> : <><Button type="button" disabled={!canPreview(approved, stale, scenario)} onClick={() => setDialogMode("preview")}>Экспорт (демо)</Button><Button type="button" variant="outline" onClick={() => setApproved(null)}>Вернуться к проверке</Button></>}
+            {!approved ? <Button type="button" disabled={blockers.length > 0} onClick={() => setDialogMode("approve")}>Утвердить</Button> : <><Button type="button" disabled={!canPreview(approved, stale, scenario)} onClick={() => setDialogMode("preview")}>Предпросмотр заказа</Button><Button type="button" variant="outline" onClick={() => setApproved(null)}>Вернуться к проверке</Button></>}
           </div>
         </section>}
       </main>

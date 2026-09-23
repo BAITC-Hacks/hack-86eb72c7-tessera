@@ -42,7 +42,7 @@ export function AgentProgress({ scenario, run, stale, onRetry }: Props) {
       {stale && <p role="status" className="mt-3 text-sm">Параметры изменены — требуется новый расчёт.</p>}
       {disconnected && <p role="alert" className="mt-3 text-sm text-destructive">Связь потеряна — данные могут быть устаревшими. Утверждение и экспорт недоступны.</p>}
       {degraded && <p role="status" className="mt-3 text-sm">ИИ-обоснование недоступно — показан расчёт.</p>}
-      {(failed || disconnected) && <button type="button" className="mt-3 text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring" onClick={onRetry}>Повторить (демо)</button>}
+      {(failed || disconnected) && <button type="button" className="mt-3 text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring" onClick={onRetry}>Повторить</button>}
     </section>
   );
 }
