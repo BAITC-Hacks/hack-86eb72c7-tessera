@@ -39,7 +39,7 @@ export function AgentProgress({ scenario, run, stale, onRetry }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 id="progress-heading" className="text-base font-semibold">Ход расчёта</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{run.label} · обновлено {new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(run.updatedAt))}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{run.label} · обновлено {new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Almaty" }).format(new Date(run.updatedAt))}</p>
         </div>
         <p role="status" className="text-sm font-medium">{status}</p>
       </div>
