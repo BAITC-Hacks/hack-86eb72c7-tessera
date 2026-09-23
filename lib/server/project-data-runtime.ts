@@ -6,6 +6,9 @@ import { getProjectDataPool } from "./db/pool"
 import { createProjectService } from "./projects"
 import { createImportLifecycle } from "./imports/lifecycle"
 import { createUploadStorage } from "./imports/upload-storage"
+import { createImportPrivateStorage } from "./imports/private-storage"
+import { dispatchOne } from "./dispatch"
+import { triggerTransport } from "./trigger-transport"
 import { createProjectDataHandlers } from "./project-data-http"
 
 let projects: ReturnType<typeof createProjectService> | undefined
@@ -29,9 +32,13 @@ function getImports() {
       ...(process.env.S3_ENDPOINT ? { endpoint: process.env.S3_ENDPOINT } : {}),
       ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey } } : {}),
     })
+    const pool = getProjectDataPool()
+    const privateStorage = createImportPrivateStorage(pool)
     imports = createImportLifecycle({
-      pool: getProjectDataPool(),
+      pool,
       storage: createUploadStorage({ client, bucket }),
+      readReport: (userId, projectId, objectId) => privateStorage.readImportReport({userId,projectId,objectId}),
+      dispatch: async importId => { await dispatchOne(pool,triggerTransport,"import",importId) },
     })
   }
   return imports

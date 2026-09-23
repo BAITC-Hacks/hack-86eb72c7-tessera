@@ -67,6 +67,9 @@ function harness() {
           Metadata: { "project-id": object.projectId, purpose: object.purpose, "sha256-hex": object.sha256Hex },
         }
       }
+      if (command instanceof GetObjectCommand) {
+        return { Body: (async function* () { yield body })() }
+      }
       throw new Error("Неожиданная команда")
   }
   const client = { send: mockSend } as unknown as S3Client
@@ -246,4 +249,17 @@ test("границы размера, срока и подтверждение в
   const maxSha = createHash("sha256").update(maxBody).digest("hex")
   const maxObject = await storage.upload({ userId, projectId, purpose: "source", body: maxBody, contentType: "text/csv", sha256Hex: maxSha })
   assert.equal(maxObject.sizeBytes, MAX_OBJECT_BYTES)
+})
+
+test("worker сверяет байты источника, когда S3 не выдаёт подтверждённый checksum", async () => {
+  const { storage, state, upload } = harness()
+  const object = await upload()
+  state.headOverride = {
+    ContentLength: object.sizeBytes, ContentType: object.contentType,
+    Metadata: { "project-id": object.projectId, purpose: "source", "sha256-hex": object.sha256Hex },
+  }
+  assert.deepEqual(await storage.readSource({ userId, projectId, objectId: object.id }), body)
+  state.headOverride = { ...state.headOverride, ContentLength: object.sizeBytes + 1 }
+  await rejectsCode(storage.readSource({ userId, projectId, objectId: object.id }), "INTEGRITY_FAILED")
+  await rejectsCode(storage.readSource({ userId: "other", projectId, objectId: object.id }), "NOT_FOUND")
 })
