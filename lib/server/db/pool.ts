@@ -12,3 +12,6 @@ export function getPool(): Pool {
   pool.on("error", () => {});
   return pool;
 }
+
+// Совместимый контракт API проектов из main; используется тот же пул.
+export const getProjectDataPool = getPool;

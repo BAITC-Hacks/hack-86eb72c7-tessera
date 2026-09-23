@@ -69,6 +69,8 @@ export const SourceManifestEntrySchema = z.strictObject({
   origin: z.enum(["partner", "synthetic"]),
   sheet: z.string().min(1).max(200).nullable(),
   mappingVersion: VersionSchema,
+  // Полный проверенный manifest05; JSON без импорта обратной зависимости.
+  importMetadata: z.json().optional(),
   columnMappings: z.array(z.strictObject({ sourceColumn: SourceKeySchema, targetField: NormalizedFieldSchema })).max(200),
 }).refine((value) => new Set(value.columnMappings.map((item) => item.targetField)).size === value.columnMappings.length, "Повтор целевого поля");
 export const SourceManifestSchema = z.array(SourceManifestEntrySchema).min(1).max(100).superRefine((entries, ctx) => {

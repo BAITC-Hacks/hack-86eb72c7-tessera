@@ -1,0 +1,11 @@
+{
+  "description": "Передача B: зависимости05. Общие package.json/lock остаются у B; также нужны зависимости04 из data-model-dependencies.json.",
+  "dependencies": {
+    "exceljs": "4.4.0",
+    "yauzl": "3.4.0",
+    "fast-xml-parser": "5.11.1"
+  },
+  "devDependencies": {
+    "@types/yauzl": "3.4.0"
+  }
+}

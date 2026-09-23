@@ -18,6 +18,11 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-workspace-nav: var(--workspace-nav);
+  --color-workspace-nav-foreground: var(--workspace-nav-foreground);
+  --color-workspace-nav-active: var(--workspace-nav-active);
+  --color-workspace-nav-active-foreground: var(--workspace-nav-active-foreground);
+  --color-workspace-nav-border: var(--workspace-nav-border);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -81,6 +86,11 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --workspace-nav: oklch(0.955 0.018 155);
+  --workspace-nav-foreground: oklch(0.31 0.038 155);
+  --workspace-nav-active: oklch(0.88 0.048 155);
+  --workspace-nav-active-foreground: oklch(0.24 0.046 155);
+  --workspace-nav-border: oklch(0.85 0.025 155);
 }
 
 .dark {

@@ -55,6 +55,7 @@ export const imports = pgTable("imports", {
 	checksum: text().notNull(),
 	manifest: jsonb().notNull(),
 	manifestHash: text("manifest_hash").notNull(),
+	manifestFrozen: boolean("manifest_frozen").default(true).notNull(),
 	adapterVersion: text("adapter_version").notNull(),
 	schemaVersion: text("schema_version").notNull(),
 	status: text().notNull(),

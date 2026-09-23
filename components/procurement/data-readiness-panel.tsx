@@ -34,17 +34,17 @@ export function DataReadinessPanel({ dataset, sources, ready, onShowValidation }
             </li>
           ))}
         </ul>
-      ) : <p className="mt-4 text-sm text-muted-foreground">Создайте или выберите набор в будущем импорте. Здесь доступен только сценарий демо.</p>}
+      ) : <p className="mt-4 text-sm text-muted-foreground">Набор данных не выбран.</p>}
       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
-        <input ref={inputRef} type="file" accept=".csv,.xls,.xlsx" className="sr-only" aria-label="Выбрать файл для демонстрации" onChange={(event) => {
+        <input ref={inputRef} type="file" accept=".csv,.xls,.xlsx" className="sr-only" aria-label="Выбрать файл" onChange={(event) => {
           const file = event.target.files?.[0];
           setFileInfo(file ? `${file.name} · ${new Intl.NumberFormat("ru-RU").format(file.size)} байт` : null);
         }} />
-        <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>Выбрать файл (демо)</Button>
-        <Button type="button" variant="outline" onClick={onShowValidation}>Показать проверку (демо)</Button>
+        <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>Выбрать файл</Button>
+        <Button type="button" variant="outline" onClick={onShowValidation}>Показать проверку</Button>
       </div>
       {fileInfo && <p className="mt-2 text-sm">Выбран файл: {fileInfo}</p>}
-      <p className="mt-2 text-xs text-muted-foreground">Файл не загружается; результат проверки демонстрационный.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Выбор файла не запускает загрузку. Проверка показывает пример результата.</p>
     </section>
   );
 }
