@@ -9,12 +9,16 @@
     "lint": "eslint",
     "test:auth": "node --test tests/auth/*.test.mjs",
     "test:workspace": "node --test tests/components/*.test.mjs",
-    "test:ai": "node --test tests/ai/*.test.mjs"
+    "test:ai": "node --test tests/ai/*.test.mjs",
+    "test:realtime": "node --test tests/realtime/*.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
     "@clerk/localizations": "4.17.1",
     "@clerk/nextjs": "7.9.4",
+    "@liveblocks/client": "3.24.1",
+    "@liveblocks/node": "3.24.1",
+    "@liveblocks/react": "3.24.1",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "lucide-react": "^1.47.0",

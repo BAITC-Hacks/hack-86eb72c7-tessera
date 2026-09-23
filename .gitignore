@@ -62,3 +62,11 @@ __pycache__/
 /tests/test_commit_context.py
 /.playwright-cli/
 /output/playwright/
+
+# Private source attachments (also excluded if copied into the repository)
+IEK.zip
+Systeme electric.zip
+HackAlem AI_ Автоматизация формирования заказов поставщикам.docx
+Инструкция_для_участников_HackAlem_AI.pdf
+Инструкция_для_участников_HackAlem_AI (1).pdf
+Правила зачета участия.pdf
