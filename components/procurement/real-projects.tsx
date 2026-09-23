@@ -91,7 +91,7 @@ function ProjectsContent({ ownerId }: { ownerId: string }) {
       <div className="border-b border-workspace-nav-border pb-6 text-xl font-semibold text-workspace-nav-foreground">tessera</div>
       <nav className="mt-5 space-y-2 text-sm" aria-label="Разделы">
         <span aria-current="page" className="block rounded-md bg-workspace-nav-active px-3 py-3 font-medium text-workspace-nav-active-foreground">Проекты</span>
-        <Link href="/workspace" className="block rounded-md px-3 py-3 text-workspace-nav-foreground hover:bg-workspace-nav-active/60 focus-visible:outline-2 focus-visible:outline-ring">Демо закупок</Link>
+        <Link href="/" className="block rounded-md px-3 py-3 text-workspace-nav-foreground hover:bg-workspace-nav-active/60 focus-visible:outline-2 focus-visible:outline-ring">Демо закупок</Link>
       </nav>
     </aside>
     <main className="mx-auto w-full max-w-5xl min-w-0 px-4 py-6 sm:px-6 md:py-9">
@@ -106,7 +106,7 @@ function ProjectsContent({ ownerId }: { ownerId: string }) {
           {loading && projects.length === 0 && <p role="status" className="mt-4 text-sm text-muted-foreground">Загружаем проекты…</p>}
           {error && <div className="mt-4 text-sm" role="alert"><p>{error}</p><Button type="button" variant="outline" className="mt-2" onClick={() => loadPage(projects.length ? nextCursor : null)}>Повторить</Button></div>}
           {!loading && !error && projects.length === 0 && <p className="mt-4 text-sm text-muted-foreground">Проектов пока нет. Создайте первый проект выше.</p>}
-          {projects.length > 0 && <ul className="mt-4 divide-y divide-border border-y border-border">{projects.map((project) => <li key={project.id} className="min-w-0 py-4"><Link href={`/workspace?projectId=${project.id}`} className="break-words text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring">{project.name}</Link><p className="mt-1 text-xs text-muted-foreground">Создан {new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(new Date(project.createdAt))}{project.archivedAt ? " · Архив" : ""}</p></li>)}</ul>}
+          {projects.length > 0 && <ul className="mt-4 divide-y divide-border border-y border-border">{projects.map((project) => <li key={project.id} className="min-w-0 py-4"><Link href={`/?projectId=${project.id}`} className="break-words text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring">{project.name}</Link><p className="mt-1 text-xs text-muted-foreground">Создан {new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeZone: "Asia/Almaty" }).format(new Date(project.createdAt))}{project.archivedAt ? " · Архив" : ""}</p></li>)}</ul>}
           {nextCursor && !error && <Button type="button" variant="outline" className="mt-4" disabled={loading || creating} onClick={() => loadPage(nextCursor)}>{loading ? "Загружаем…" : "Показать ещё"}</Button>}
         </section>
       </>}

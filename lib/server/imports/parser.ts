@@ -11,7 +11,7 @@ import type {
 export const IMPORT_PARSER_LIMITS = Object.freeze({
   maxInputBytes: 25 * 1024 * 1024,
   maxEntries: 2048,
-  maxEntryBytes: 64 * 1024 * 1024,
+  maxEntryBytes: 96 * 1024 * 1024,
   maxInflatedBytes: 256 * 1024 * 1024,
   maxCompressionRatio: 200,
   maxSheets: 64,
