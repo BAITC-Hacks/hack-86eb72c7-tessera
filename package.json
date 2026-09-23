@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:forecast": "node --import ./tests/domain/load-typescript.mjs --test tests/domain/forecast/*.test.mjs",
     "test:auth": "node --test tests/auth/*.test.mjs",
     "test:workspace": "node --test tests/components/*.test.mjs",
     "test:ai": "node --test tests/ai/*.test.mjs",
