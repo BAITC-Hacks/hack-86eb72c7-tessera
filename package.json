@@ -7,13 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:forecast": "node --import ./tests/domain/load-typescript.mjs --test tests/domain/forecast/*.test.mjs",
     "test:auth": "node --test tests/auth/*.test.mjs",
     "test:workspace": "node --test tests/components/*.test.mjs",
     "test:ai": "node --test tests/ai/*.test.mjs",
     "test:realtime": "node --test tests/realtime/*.test.mjs",
+    "test:realtime-db": "node --conditions=react-server --import tsx --test --test-concurrency=1 tests/realtime/ownership-db.test.ts",
     "test:client": "node --test tests/client/*.test.mjs",
     "test:data-model": "node --conditions=react-server --import tsx --test tests/contracts/*.test.ts tests/server/*.test.ts",
-    "test:imports": "node --conditions=react-server --import tsx --test --test-concurrency=1 tests/imports/*.test.mjs tests/imports/*.test.ts"
+    "test:imports": "node --conditions=react-server --import tsx --test --test-concurrency=1 tests/imports/*.test.mjs tests/imports/*.test.ts",
+    "test:replenishment": "node --import ./tests/domain/load-typescript.mjs --test tests/domain/replenishment/*.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1138.0",
