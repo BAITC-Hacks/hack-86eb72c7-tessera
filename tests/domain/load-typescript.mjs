@@ -1,8 +1,7 @@
 import { existsSync } from "node:fs";
 import { registerHooks } from "node:module";
-import { fileURLToPath } from "node:url";
 
-// Только тестовый процесс: extensionless-импорты чистого ядра и DTO.
+// Разрешение расширений Next.js ограничено чистым ядром и его DTO.
 const roots = [
   new URL("../../lib/domain/forecast/", import.meta.url).href,
   new URL("../../lib/domain/replenishment/", import.meta.url).href,
