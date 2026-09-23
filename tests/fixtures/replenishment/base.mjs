@@ -99,6 +99,7 @@ export function makeFixture() {
       },
       policies: {
         trendCapsByCategory: [{ categoryKey: "cables", maxMonthlyTrendFactor: "2" }],
+        growthSemanticsByAssumption: [],
         unitSteps: [{ productId: IDS.product, unit: "m", step: "1" }],
       },
     },

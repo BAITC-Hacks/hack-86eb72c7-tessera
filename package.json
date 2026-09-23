@@ -12,9 +12,15 @@
     "test:workspace": "node --test tests/components/*.test.mjs",
     "test:ai": "node --test tests/ai/*.test.mjs",
     "test:realtime": "node --test tests/realtime/*.test.mjs",
+    "test:realtime-db": "node --conditions=react-server --import tsx --test --test-concurrency=1 tests/realtime/ownership-db.test.ts",
+    "test:client": "node --test tests/client/*.test.mjs",
+    "test:data-model": "node --conditions=react-server --import tsx --test tests/contracts/*.test.ts tests/server/*.test.ts",
+    "test:imports": "node --conditions=react-server --import tsx --test --test-concurrency=1 tests/imports/*.test.mjs tests/imports/*.test.ts",
     "test:replenishment": "node --import ./tests/domain/load-typescript.mjs --test tests/domain/replenishment/*.test.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1138.0",
+    "@aws-sdk/s3-request-presigner": "3.1138.0",
     "@base-ui/react": "^1.8.0",
     "@clerk/localizations": "4.17.1",
     "@clerk/nextjs": "7.9.4",
@@ -23,21 +29,33 @@
     "@liveblocks/react": "3.24.1",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
+    "drizzle-orm": "0.45.3",
+    "exceljs": "4.4.0",
+    "fast-xml-parser": "5.11.1",
     "lucide-react": "^1.47.0",
     "next": "16.3.6",
+    "pg": "8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "server-only": "0.0.1",
     "shadcn": "^4.21.0",
-    "tw-animate-css": "^1.4.0"
+    "tw-animate-css": "^1.4.0",
+    "yauzl": "3.4.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/yauzl": "3.4.0",
+    "drizzle-kit": "0.31.11",
+    "embedded-postgres": "18.4.0-beta.17",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
+    "tsx": "4.23.15",
     "typescript": "^5"
   }
 }
