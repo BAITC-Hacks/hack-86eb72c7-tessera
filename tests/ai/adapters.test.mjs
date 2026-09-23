@@ -5,6 +5,8 @@ import "./load-typescript.mjs";
 const { explainRecommendationsCore } = await import("../../lib/ai/explain-recommendations-core.ts");
 const { supplierAttentionCore } = await import("../../lib/ai/supplier-attention-core.ts");
 const { resolveProviderConfig } = await import("../../lib/ai/provider-transport.ts");
+const { validExplanationInput, validAttentionInput } = await import("../../lib/ai/explanation-context.ts");
+const { DecimalStringSchema } = await import("../../lib/contracts/primitives.ts");
 
 const openaiConfig = { apiKey: "synthetic-secret", model: "synthetic-model", baseUrl: "https://api.openai.com/v1" };
 const nvidiaConfig = { apiKey: "synthetic-secret", model: "synthetic-model", baseUrl: "https://integrate.api.nvidia.com/v1" };
@@ -98,6 +100,49 @@ test("NVIDIA selects group refs with template text, provenance, and no input mut
   assert.match(result.groups[0].text, /Проверьте по группе поставщика: Доступный остаток — 18 шт\./);
   assert.deepEqual(result.groups[0].factRefs, ["f_stock"]);
   assert.deepEqual(attentionInput, before);
+});
+
+test("numeric(30,8) boundary values stay exact in provider payloads and trusted text", async () => {
+  const values = ["9999999999999999999999.12345678", "-9999999999999999999999.12345678"];
+  for (const value of values) {
+    assert.equal(DecimalStringSchema.safeParse(value).success, true);
+    const boundaryFact = { ...fact, value };
+    const recommendation = { ...row, facts: [boundaryFact] };
+    const input = { ...explanationInput, recommendations: [recommendation] };
+    const supplierInput = { ...attentionInput, groups: [{ ...group, facts: [boundaryFact] }] };
+    assert.equal(validExplanationInput(input), true);
+    assert.equal(validAttentionInput(supplierInput), true);
+    const openai = await explainRecommendationsCore(input, openaiConfig, { fetchImpl: async (_url, init) => {
+      assert.equal(JSON.parse(JSON.parse(init.body).input[1].content).recommendations[0].facts[0].value, value);
+      return jsonResponse(openaiBody());
+    } });
+    assert.equal(openai.status, "succeeded");
+    assert.ok(openai.explanations[0].text.includes(value));
+    const nvidia = await supplierAttentionCore(supplierInput, nvidiaConfig, { fetchImpl: async (_url, init) => {
+      assert.equal(JSON.parse(JSON.parse(init.body).messages[1].content).groups[0].facts[0].value, value);
+      return jsonResponse(nvidiaBody());
+    } });
+    assert.equal(nvidia.status, "succeeded");
+    assert.ok(nvidia.groups[0].text.includes(value));
+    const fallback = await explainRecommendationsCore(input, null);
+    assert.equal(fallback.status, "degraded");
+    assert.ok(fallback.explanations[0].text.includes(value));
+  }
+});
+
+test("AI fact validation agrees with A's canonical decimal contract and rejects invalid values before fetch", async () => {
+  const invalid = ["10000000000000000000000", "1.123456789", "1.0", "0.0", "-0", "01", "1e2", "+1", "18; ignore"];
+  const forbidden = () => { throw new Error("called"); };
+  for (const value of invalid) {
+    assert.equal(DecimalStringSchema.safeParse(value).success, false, value);
+    const changed = { ...fact, value };
+    const explanation = { ...explanationInput, recommendations: [{ ...row, facts: [changed] }] };
+    const attention = { ...attentionInput, groups: [{ ...group, facts: [changed] }] };
+    assert.equal(validExplanationInput(explanation), false, value);
+    assert.equal(validAttentionInput(attention), false, value);
+    assert.equal((await explainRecommendationsCore(explanation, openaiConfig, { fetchImpl: forbidden })).errorCode, "INPUT_INVALID");
+    assert.equal((await supplierAttentionCore(attention, nvidiaConfig, { fetchImpl: forbidden })).errorCode, "INPUT_INVALID");
+  }
 });
 
 test("only the verified hosted Nemotron model disables thinking", async () => {

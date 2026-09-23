@@ -81,7 +81,7 @@ export function ProjectSelection({ projects, selectedProjectId, selectedRunId, o
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onCreateOpenChange(false)}>Отмена</Button>
-              <Button type="submit">Создать в демо</Button>
+              <Button type="submit">Создать</Button>
             </DialogFooter>
           </form>
         </DialogContent>

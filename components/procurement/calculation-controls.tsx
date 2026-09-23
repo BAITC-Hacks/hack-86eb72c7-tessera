@@ -40,7 +40,7 @@ export function CalculationControls({ dataset, scope, ready, running, onScopeCha
         <div className="text-sm"><span className="font-medium">Прогноз прироста</span><p className="mt-1 text-muted-foreground">{dataset?.growth ?? "Нет данных"}</p></div>
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-4">
-        <Button type="button" disabled={disabled} onClick={onCalculate}>Рассчитать потребность</Button>
+        <Button type="button" className="bg-workspace-nav-active-foreground text-white hover:bg-workspace-nav-foreground" disabled={disabled} onClick={onCalculate}>Рассчитать потребность</Button>
         {disabled && <p className="text-sm text-muted-foreground">{running ? "Расчёт уже выполняется." : "Для расчёта нужны готовые обязательные данные и выбранный склад."}</p>}
       </div>
     </section>
